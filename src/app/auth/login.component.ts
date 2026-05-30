@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from './auth.service';
 
@@ -34,9 +35,13 @@ export class LoginComponent {
     this.error = '';
     try {
       await this.auth.signIn(this.form.getRawValue());
-      this.router.navigateByUrl('/');
-    } catch (e: any) {
-      this.error = e?.message || 'Erro ao autenticar';
+      this.router.navigateByUrl('/dashboard');
+    } catch (e: unknown) {
+      if (e instanceof HttpErrorResponse) {
+        this.error = e.error?.message || `Nao foi possivel autenticar (HTTP ${e.status || 0}).`;
+      } else {
+        this.error = 'Nao foi possivel autenticar.';
+      }
     } finally {
       this.loading = false;
     }

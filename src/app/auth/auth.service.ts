@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 
@@ -6,6 +7,15 @@ interface RegisterPayload {
   nome: string;
   email: string;
   senha: string;
+}
+
+interface LoginPayload {
+  email: string;
+  senha: string;
+}
+
+export interface LoginResponse {
+  token: string;
 }
 
 export interface RegisterResponse {
@@ -19,23 +29,52 @@ export interface RegisterResponse {
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private readonly apiUrl = '';
+  private readonly tokenKey = 'auth_token';
+  private readonly isBrowser: boolean;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, @Inject(PLATFORM_ID) platformId: object) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
-  // Mock sign-in: aceita qualquer credencial com senha >= 6
-  async signIn({ email, password }: { email: string; password: string }): Promise<void> {
-    await new Promise((r) => setTimeout(r, 600));
-    if (!email || !password) {
-      throw new Error('Credenciais inválidas');
-    }
-    if (password.length < 6) {
-      throw new Error('Senha muito curta');
-    }
-    // aqui você trocaria por chamada HTTP real
-    return;
+  async signIn({ email, password }: { email: string; password: string }): Promise<LoginResponse> {
+    const payload: LoginPayload = {
+      email,
+      senha: password
+    };
+
+    const response = await firstValueFrom(
+      this.http.post<LoginResponse>(`${this.apiUrl}/auth/login`, payload)
+    );
+
+    this.saveToken(response.token);
+    return response;
   }
 
   register(payload: RegisterPayload): Promise<RegisterResponse> {
     return firstValueFrom(this.http.post<RegisterResponse>(`${this.apiUrl}/auth/register`, payload));
+  }
+
+  saveToken(token: string): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    localStorage.setItem(this.tokenKey, token);
+  }
+
+  getToken(): string | null {
+    if (!this.isBrowser) {
+      return null;
+    }
+
+    return localStorage.getItem(this.tokenKey);
+  }
+
+  clearToken(): void {
+    if (!this.isBrowser) {
+      return;
+    }
+
+    localStorage.removeItem(this.tokenKey);
   }
 }
