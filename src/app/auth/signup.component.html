@@ -1,0 +1,24 @@
+<section class="auth-root">
+  <div class="card">
+    <div class="brand" aria-hidden="true"></div>
+    <h2 class="title">crie sua conta</h2>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <label class="visually-hidden" for="nome">Nome</label>
+      <input id="nome" type="text" formControlName="nome" placeholder="nome" autocomplete="name" />
+
+      <label class="visually-hidden" for="email">Email</label>
+      <input id="email" type="email" formControlName="email" placeholder="email" autocomplete="email" />
+
+      <label class="visually-hidden" for="senha">Senha</label>
+      <input id="senha" type="password" formControlName="senha" placeholder="senha" autocomplete="new-password" />
+
+      <button type="submit" class="submit" [disabled]="loading">{{ loading ? 'Criando...' : 'Criar conta' }}</button>
+    </form>
+
+    <p class="helper">ja possui conta? <a routerLink="/login">faca login</a></p>
+
+    <div *ngIf="error" class="error" role="alert">{{ error }}</div>
+    <div *ngIf="success" class="success" role="status">{{ success }}</div>
+  </div>
+</section>
