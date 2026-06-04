@@ -1,10 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-<<<<<<< HEAD
 import { Observable, tap, switchMap, map } from 'rxjs';
-=======
-import { Observable, tap, switchMap } from 'rxjs';
->>>>>>> arturDevSenior
 import { API_BASE_URL, TOKEN_KEY, USER_KEY } from './api.config';
 import { AuthRequest, AuthResponse, RegisterRequest, Role, User } from '../models/models';
 
@@ -49,20 +45,13 @@ export class AuthService {
 
   get currentUser(): User | null {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(USER_KEY) : null;
-<<<<<<< HEAD
-    if (!raw || raw === 'undefined') return null;
-    try {
-      return this.mapUser(JSON.parse(raw));
-    } catch {
-=======
     if (!raw || raw === 'undefined') {
       return null;
     }
     try {
-      return JSON.parse(raw);
+      return this.mapUser(JSON.parse(raw));
     } catch (e) {
       console.error('Erro ao ler usuário do localStorage:', e);
->>>>>>> arturDevSenior
       return null;
     }
   }

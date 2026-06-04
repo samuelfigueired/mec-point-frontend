@@ -3,15 +3,10 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableComponent, TableColumn } from '../../shared/table/table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
-<<<<<<< HEAD
-import { Veiculo } from '../../models/models';
-import { VeiculoService } from '../../services/veiculo.service';
-=======
 import { Veiculo, User } from '../../models/models';
 import { VeiculoService } from '../../services/veiculo.service';
 import { AuthService } from '../../services/auth.service';
 import { UserService } from '../../services/user.service';
->>>>>>> arturDevSenior
 
 @Component({
   selector: 'app-veiculos',
@@ -21,69 +16,51 @@ import { UserService } from '../../services/user.service';
     <div class="head">
       <div>
         <h1 class="page-title">Veículos</h1>
-<<<<<<< HEAD
         <p class="subtitle">
           <ng-container *ngIf="loading">Carregando veículos...</ng-container>
           <ng-container *ngIf="!loading">
             {{ rows.length === 0 ? 'Nenhum veículo cadastrado no momento.' : rows.length + (rows.length === 1 ? ' veículo cadastrado.' : ' veículos cadastrados.') }}
           </ng-container>
-=======
-        <p class="subtitle" *ngIf="loading">Carregando veículos...</p>
-        <p class="subtitle" *ngIf="!loading && rows.length === 0">Nenhum veículo cadastrado no momento.</p>
-        <p class="subtitle" *ngIf="!loading && rows.length > 0">
-          {{ rows.length }} {{ rows.length === 1 ? 'veículo cadastrado' : 'veículos cadastrados' }}.
->>>>>>> arturDevSenior
         </p>
       </div>
       <button class="app-btn" (click)="openNew()">+ Novo</button>
     </div>
-    
+
     <div class="filter-row">
       <input class="input" placeholder="Pesquisar..." [(ngModel)]="search" />
     </div>
-<<<<<<< HEAD
-    <app-table 
-      [columns]="columns" 
-      [rows]="filtered" 
+
+    <app-table
+      [columns]="columns"
+      [rows]="filtered"
       [loading]="loading"
-=======
-
-    <div *ngIf="loading" class="loading-indicator">
-      <div class="spinner"></div>
-      <span>Carregando dados...</span>
-    </div>
-
-    <app-table 
-      *ngIf="!loading"
-      [columns]="columns" 
-      [rows]="filtered" 
->>>>>>> arturDevSenior
-      emptyMessage="Nenhum veículo cadastrado." 
-      (edit)="openEdit($event)" 
-      (remove)="remove($event)" 
+      emptyMessage="Nenhum veículo cadastrado."
+      (edit)="openEdit($event)"
+      (remove)="remove($event)"
     />
 
+    <!-- Form Modal -->
     <app-modal [open]="modal" [title]="form.id ? 'Editar veículo' : 'Novo veículo'" (close)="modal=false">
       <div class="form-group">
         <label>Placa</label>
         <input class="input" name="placa" [(ngModel)]="form.placa" placeholder="Ex: AAA-1234 ou ABC1D23" />
       </div>
-      
+
       <div class="form-group">
         <label>Marca</label>
         <input class="input" name="marca" [(ngModel)]="form.marca" placeholder="Ex: Chevrolet" />
       </div>
-      
+
       <div class="form-group">
         <label>Modelo</label>
         <input class="input" name="modelo" [(ngModel)]="form.modelo" placeholder="Ex: Onix" />
       </div>
-      
+
       <div class="form-group">
         <label>Ano</label>
         <input class="input" type="number" name="ano" [(ngModel)]="form.ano" placeholder="Ex: 2022" />
       </div>
-      
+
       <div class="form-group">
         <label>Câmbio</label>
         <select class="input" name="cambio" [(ngModel)]="form.cambio">
@@ -111,6 +88,7 @@ import { UserService } from '../../services/user.service';
       </div>
     </app-modal>
 
+    <!-- Custom Styled Delete Modal -->
     <app-modal [open]="deleteModal" title="Confirmar Exclusão" (close)="deleteModal=false">
       <div style="text-align: center; padding: 10px 0;">
         <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6;">
@@ -157,67 +135,26 @@ import { UserService } from '../../services/user.service';
       font-weight: 600;
       border: 1px solid rgba(234, 79, 66, 0.2);
     }
-    .loading-indicator {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 40px;
-      color: #fff;
-      font-weight: 600;
-      font-size: 14px;
-      gap: 10px;
-    }
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 3px solid rgba(255,255,255,.3);
-      border-radius: 50%;
-      border-top-color: var(--accent);
-      animation: spin 1.2s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
     @media (max-width:900px){.head{flex-direction:column}.filter-row{max-width:none}.head .app-btn{width:100%}}
   `],
 })
 export class VeiculosComponent implements OnInit {
   private veiculoService = inject(VeiculoService);
-<<<<<<< HEAD
-
-  columns: TableColumn[] = [
-    { key: 'placa', label: 'Placa' },
-    { key: 'marca', label: 'Marca' },
-    { key: 'modelo', label: 'Modelo' },
-    { key: 'ano', label: 'Ano' },
-  ];
-=======
   private authService = inject(AuthService);
   private userService = inject(UserService);
 
   columns: TableColumn[] = [];
->>>>>>> arturDevSenior
   rows: Veiculo[] = [];
   users: User[] = [];
   search = '';
   modal = false;
-<<<<<<< HEAD
-  form: Veiculo = { placa: '', modelo: '', marca: '', ano: 2024, cor: '' };
-  
-  deleteModal = false;
-  veiculoToDelete: Veiculo | null = null;
-  loading = false;
-
-  ngOnInit() {
-    this.loadVeiculos();
-  }
-
-  loadVeiculos() {
-    this.loading = true;
-    this.veiculoService.list().subscribe({
-=======
   loading = false;
   saving = false;
   errorMessage = '';
   form: Veiculo = { placa: '', modelo: '', marca: '', ano: new Date().getFullYear(), cambio: '' };
+
+  deleteModal = false;
+  veiculoToDelete: Veiculo | null = null;
 
   ngOnInit() {
     this.setupColumns();
@@ -251,18 +188,11 @@ export class VeiculosComponent implements OnInit {
       : this.veiculoService.meus();
 
     vehicles$.subscribe({
->>>>>>> arturDevSenior
       next: (data) => {
         this.rows = data;
         this.loading = false;
       },
       error: (err) => {
-<<<<<<< HEAD
-        console.error('Erro ao carregar veículos:', err);
-        this.loading = false;
-      }
-    });
-=======
         console.error(err);
         this.errorMessage = 'Erro ao carregar veículos do backend.';
         this.loading = false;
@@ -279,14 +209,13 @@ export class VeiculosComponent implements OnInit {
         }
       });
     }
->>>>>>> arturDevSenior
   }
 
   get filtered() {
     const s = this.search.toLowerCase();
-    return this.rows.filter(r => 
-      !s || 
-      r.placa.toLowerCase().includes(s) || 
+    return this.rows.filter(r =>
+      !s ||
+      r.placa.toLowerCase().includes(s) ||
       r.modelo.toLowerCase().includes(s) ||
       r.marca.toLowerCase().includes(s) ||
       (r.usuarioNome && r.usuarioNome.toLowerCase().includes(s))
@@ -294,11 +223,11 @@ export class VeiculosComponent implements OnInit {
   }
 
   openNew() {
-    this.form = { 
-      placa: '', 
-      modelo: '', 
-      marca: '', 
-      ano: new Date().getFullYear(), 
+    this.form = {
+      placa: '',
+      modelo: '',
+      marca: '',
+      ano: new Date().getFullYear(),
       cambio: '',
       usuarioId: this.isAdminOrMecanico ? undefined : (this.authService.currentUser?.id || undefined)
     };
@@ -339,74 +268,24 @@ export class VeiculosComponent implements OnInit {
       usuarioId: this.form.usuarioId ? Number(this.form.usuarioId) : undefined
     };
 
-    if (this.form.id) {
-      this.veiculoService.update(this.form.id, payload).subscribe({
-        next: () => {
-          this.saving = false;
-          this.modal = false;
-          this.loadData();
-        },
-        error: (err) => {
-          console.error(err);
-          this.errorMessage = err.error?.message || 'Erro ao atualizar veículo.';
-          this.saving = false;
-        }
-      });
-    } else {
-      this.veiculoService.create(payload).subscribe({
-        next: () => {
-          this.saving = false;
-          this.modal = false;
-          this.loadData();
-        },
-        error: (err) => {
-          console.error(err);
-          this.errorMessage = err.error?.message || 'Erro ao cadastrar veículo. Verifique os dados (a placa deve ser única).';
-          this.saving = false;
-        }
-      });
-    }
-  }
-
-  remove(v: Veiculo) {
-    if (!v.id) return;
-    if (confirm(`Deseja realmente excluir o veículo "${v.modelo}" (${v.placa})?`)) {
-      this.veiculoService.delete(v.id).subscribe({
-        next: () => {
-          this.loadData();
-        },
-        error: (err) => {
-          console.error(err);
-          alert(err.error?.message || 'Erro ao excluir o veículo.');
-        }
-      });
-    }
-  }
-<<<<<<< HEAD
-  
-  openNew() { this.form = { placa: '', modelo: '', marca: '', ano: 2024, cor: '' }; this.modal = true; }
-  
-  openEdit(v: Veiculo) { this.form = { ...v }; this.modal = true; }
-  
-  save() {
-    this.loading = true;
     const obs = this.form.id
-      ? this.veiculoService.update(this.form.id, this.form)
-      : this.veiculoService.create(this.form);
-    
+      ? this.veiculoService.update(this.form.id, payload)
+      : this.veiculoService.create(payload);
+
     obs.subscribe({
       next: () => {
+        this.saving = false;
         this.modal = false;
-        this.loadVeiculos();
+        this.loadData();
       },
       error: (err) => {
-        console.error('Erro ao salvar veículo:', err);
-        alert(err.error?.message || 'Erro ao salvar veículo.');
-        this.loading = false;
+        console.error(err);
+        this.errorMessage = err.error?.message || 'Erro ao salvar veículo. Verifique os dados (a placa deve ser única).';
+        this.saving = false;
       }
     });
   }
-  
+
   remove(v: Veiculo) {
     this.veiculoToDelete = v;
     this.deleteModal = true;
@@ -419,11 +298,11 @@ export class VeiculosComponent implements OnInit {
         next: () => {
           this.deleteModal = false;
           this.veiculoToDelete = null;
-          this.loadVeiculos();
+          this.loadData();
         },
         error: (err) => {
-          console.error('Erro ao remover veículo:', err);
-          alert(err.error?.message || 'Erro ao remover veículo.');
+          console.error(err);
+          this.errorMessage = err.error?.message || 'Erro ao excluir o veículo.';
           this.deleteModal = false;
           this.veiculoToDelete = null;
           this.loading = false;
@@ -431,6 +310,4 @@ export class VeiculosComponent implements OnInit {
       });
     }
   }
-=======
->>>>>>> arturDevSenior
 }
