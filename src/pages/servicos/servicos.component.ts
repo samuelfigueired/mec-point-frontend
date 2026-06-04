@@ -15,7 +15,10 @@ import { ServicoService } from '../../services/servico.service';
       <div>
         <h1 class="page-title">Serviços</h1>
         <p class="subtitle">
-          {{ rawServices.length }} {{ rawServices.length === 1 ? 'serviço cadastrado' : 'serviços cadastrados' }} no momento.
+          <ng-container *ngIf="loading">Carregando serviços...</ng-container>
+          <ng-container *ngIf="!loading">
+            {{ rawServices.length }} {{ rawServices.length === 1 ? 'serviço cadastrado' : 'serviços cadastrados' }} no momento.
+          </ng-container>
         </p>
       </div>
       <button class="app-btn" (click)="openNew()">+ Novo</button>
@@ -27,6 +30,7 @@ import { ServicoService } from '../../services/servico.service';
     <app-table 
       [columns]="columns" 
       [rows]="filtered" 
+      [loading]="loading"
       emptyMessage="Nenhum serviço disponível." 
       (edit)="openEdit($event)" 
       (remove)="remove($event)" 
@@ -113,6 +117,7 @@ export class ServicosComponent implements OnInit {
   search = '';
   modal = false;
   error = '';
+  loading = false;
   
   form: Servico = { nome: '', descricao: '', valor: 0, ativo: true };
 
@@ -121,6 +126,7 @@ export class ServicosComponent implements OnInit {
   }
 
   load() {
+    this.loading = true;
     this.servicoService.list().subscribe({
       next: (data) => {
         this.rawServices = data;
@@ -131,10 +137,12 @@ export class ServicosComponent implements OnInit {
             ? '<span class="status-chip status-chip-concluido">Ativo</span>' 
             : '<span class="status-chip status-chip-cancelado">Inativo</span>'
         }));
+        this.loading = false;
       },
       error: (err) => {
         console.error(err);
         this.error = 'Erro ao carregar serviços.';
+        this.loading = false;
       }
     });
   }

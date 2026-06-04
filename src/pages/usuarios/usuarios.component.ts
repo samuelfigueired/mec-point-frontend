@@ -14,14 +14,19 @@ import { UserService } from '../../services/user.service';
     <div class="head">
       <div>
         <h1 class="page-title">Usuários</h1>
-        <p class="subtitle">{{ rows.length === 0 ? 'Nenhum usuário cadastrado no momento.' : rows.length + (rows.length === 1 ? ' usuário cadastrado.' : ' usuários cadastrados.') }}</p>
+        <p class="subtitle">
+          <ng-container *ngIf="loading">Carregando usuários...</ng-container>
+          <ng-container *ngIf="!loading">
+            {{ rows.length === 0 ? 'Nenhum usuário cadastrado no momento.' : rows.length + (rows.length === 1 ? ' usuário cadastrado.' : ' usuários cadastrados.') }}
+          </ng-container>
+        </p>
       </div>
       <button class="app-btn" (click)="openNew()">+ Novo</button>
     </div>
     <div class="filter-row">
       <input class="input" placeholder="Pesquisar..." [(ngModel)]="search" />
     </div>
-    <app-table [columns]="columns" [rows]="filtered" emptyMessage="Nenhum usuário encontrado." (edit)="openEdit($event)" (remove)="remove($event)" />
+    <app-table [columns]="columns" [rows]="filtered" [loading]="loading" emptyMessage="Nenhum usuário encontrado." (edit)="openEdit($event)" (remove)="remove($event)" />
 
     <app-modal [open]="modal" [title]="form.id ? 'Editar usuário' : 'Novo usuário'" (close)="modal=false">
       <label>Nome</label>
@@ -79,18 +84,22 @@ export class UsuariosComponent implements OnInit {
   form: User = { nome: '', email: '', senha: '', role: 'CLIENTE' };
   deleteModal = false;
   userToDelete: User | null = null;
+  loading = false;
 
   ngOnInit() {
     this.loadUsers();
   }
 
   loadUsers() {
+    this.loading = true;
     this.userService.list().subscribe({
       next: (users) => {
         this.rows = users;
+        this.loading = false;
       },
       error: (err) => {
         console.error('Erro ao listar usuários:', err);
+        this.loading = false;
       }
     });
   }
