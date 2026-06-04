@@ -32,36 +32,48 @@ export interface Servico {
   categoria?: string;
 }
 
-export type StatusAgendamento = 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO';
+export type StatusAgendamento = 'PENDENTE' | 'AGENDADO' | 'CONFIRMADO' | 'EM_ANDAMENTO' | 'QUASE_FINALIZADO' | 'FINALIZADO' | 'CANCELADO';
 
 export interface Agendamento {
   id?: number;
-  usuarioId: number;
-  mecanicoId?: number;
-  veiculoId: number;
-  servicoId: number;
-  dataInicio: string;
-  dataFim?: string;
-  status: StatusAgendamento;
+  numeroAgd?: string;
+  cliente?: string;
+  servico?: string;
   descricao?: string;
-  // joined
-  cliente?: User;
-  mecanico?: User;
-  veiculo?: Veiculo;
-  servico?: Servico;
+  dataHora: string;
+  status: StatusAgendamento;
+  veiculoId: number;
+  veiculoModelo?: string;
+  veiculoMarca?: string;
+  veiculoPlaca?: string;
+  usuarioId: number;
+  usuarioNome?: string;
+  mecanicoId?: number;
+  mecanicoNome?: string;
+  servicoId?: number;
+  servicoNome?: string;
+  servicoValor?: number;
 }
 
 export interface EventoAgendamento {
   id?: number;
   agendamentoId: number;
+  numeroAgendamento?: string;
   titulo: string;
   descricao?: string;
-  data: string;
+  status?: StatusAgendamento;
+  dataEvento?: string;
+  criadoPorId?: number;
+  criadoPorNome?: string;
 }
 
 export interface DashboardMecanico {
+  total: number;
   pendentes: number;
+  agendados: number;
+  confirmados: number;
   emAndamento: number;
-  concluidos: number;
+  quaseFinalizados: number;
+  finalizados: number;
   cancelados: number;
 }

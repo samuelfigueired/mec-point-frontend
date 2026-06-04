@@ -46,7 +46,7 @@ import { ModalComponent } from '../../shared/modal/modal.component';
         <div class="vehicle-side-panel">
           <span class="vehicle-id">ID: {{ id || '927837' }}</span>
           <img 
-            [src]="ag.veiculo?.modelo?.toLowerCase()?.includes('seal') ? 'https://images.images.com/byd-seal.png' : 'https://images.images.com/fiat-pulse.png'" 
+            [src]="ag.veiculoModelo?.toLowerCase()?.includes('seal') ? 'https://images.images.com/byd-seal.png' : 'https://images.images.com/fiat-pulse.png'" 
             alt="Veículo" 
             class="vehicle-img"
           />
@@ -58,21 +58,21 @@ import { ModalComponent } from '../../shared/modal/modal.component';
             <div class="info-grid">
               <span class="info-label">Status</span>
               <span class="info-value">
-                <span class="status-dot" [ngClass]="ag.status === 'CONCLUIDO' ? 'dot-concluido' : 'dot-andamento'"></span> 
+                <span class="status-dot" [ngClass]="ag.status === 'FINALIZADO' ? 'dot-concluido' : 'dot-andamento'"></span> 
                 {{ statusLabel }}
               </span>
               
               <span class="info-label">Placa</span>
-              <span class="info-value">{{ ag.veiculo?.placa || 'TRHX-9972' }}</span>
+              <span class="info-value">{{ ag.veiculoPlaca || 'TRHX-9972' }}</span>
               
-              <span class="info-label">Data Início</span>
-              <span class="info-value">{{ ag.dataInicio || '20/03/2026' }}</span>
+              <span class="info-label">Data</span>
+              <span class="info-value">{{ ag.dataHora || '20/03/2026' }}</span>
               
               <span class="info-label">Modelo</span>
-              <span class="info-value font-bold">{{ ag.veiculo?.modelo || 'FIAT PULSE' }}</span>
+              <span class="info-value font-bold">{{ ag.veiculoModelo || 'FIAT PULSE' }}</span>
               
               <span class="info-label">Ano</span>
-              <span class="info-value">{{ ag.veiculo?.ano || '2025' }}</span>
+              <span class="info-value">{{ '—' }}</span>
               
               <span class="info-label">Descrição</span>
               <span class="info-value text-upper">{{ ag.descricao || 'Carro deixado para a revisão' }}</span>
@@ -92,7 +92,7 @@ import { ModalComponent } from '../../shared/modal/modal.component';
             <span class="dot"></span>
             <div class="timeline-content">
               <strong>{{ e.titulo }}</strong>
-              <small>{{ e.data }}</small>
+              <small>{{ e.dataEvento }}</small>
               <p>{{ e.descricao }}</p>
               <div class="evt-actions">
                 <button class="app-btn app-btn-sm app-btn-ghost" (click)="openEditEvento(e)">Editar</button>
@@ -116,7 +116,7 @@ import { ModalComponent } from '../../shared/modal/modal.component';
       <input class="input" name="titulo" [(ngModel)]="evForm.titulo" />
       
       <label class="dialog-label">Data</label>
-      <input class="input" type="date" name="data" [(ngModel)]="evForm.data" />
+      <input class="input" type="datetime-local" name="data" [(ngModel)]="evForm.dataEvento" />
       
       <label class="dialog-label">Descrição</label>
       <textarea class="input" rows="3" name="descricao" [(ngModel)]="evForm.descricao"></textarea>
@@ -351,19 +351,19 @@ import { ModalComponent } from '../../shared/modal/modal.component';
 })
 export class AgendamentoDetalheComponent implements OnInit {
   @Input() id?: string;
-  ag: Agendamento = { id: 0, usuarioId: 0, veiculoId: 0, servicoId: 0, dataInicio: '', status: 'PENDENTE', descricao: '' };
+  ag: Agendamento = { id: 0, usuarioId: 0, veiculoId: 0, dataHora: '', status: 'PENDENTE', descricao: '' };
   eventos: EventoAgendamento[] = [];
   modal = false;
-  evForm: EventoAgendamento = { agendamentoId: 0, titulo: '', data: '', descricao: '' };
+  evForm: EventoAgendamento = { agendamentoId: 0, titulo: '', dataEvento: '', descricao: '' };
   statusLabel = 'Em Andamento';
 
   ngOnInit() { 
     if (this.id) this.ag.id = +this.id; 
-    this.statusLabel = this.ag.status === 'CONCLUIDO' ? 'Concluído' : 'Em Andamento';
+    this.statusLabel = this.ag.status === 'FINALIZADO' ? 'Finalizado' : 'Em Andamento';
   }
 
   openNewEvento() { 
-    this.evForm = { agendamentoId: this.ag.id!, titulo: '', data: '', descricao: '' }; 
+    this.evForm = { agendamentoId: this.ag.id!, titulo: '', dataEvento: '', descricao: '' }; 
     this.modal = true; 
   }
 

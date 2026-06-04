@@ -40,8 +40,11 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
       <select class="f-input" [(ngModel)]="filterStatus">
         <option value="">Todos os status</option>
         <option value="PENDENTE">Pendente</option>
+        <option value="AGENDADO">Agendado</option>
+        <option value="CONFIRMADO">Confirmado</option>
         <option value="EM_ANDAMENTO">Em andamento</option>
-        <option value="CONCLUIDO">Concluído</option>
+        <option value="QUASE_FINALIZADO">Quase finalizado</option>
+        <option value="FINALIZADO">Finalizado</option>
         <option value="CANCELADO">Cancelado</option>
       </select>
       <select class="f-input" [(ngModel)]="filterUser">
@@ -74,17 +77,17 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
       <div class="ag-card" *ngFor="let a of filtered">
         <div class="ag-img"><div class="ag-id">ID:{{ a.id }}</div></div>
         <div class="ag-info">
-          <div class="ag-head">{{ a.servico?.nome || 'Serviço não definido' }}</div>
-          <p><b>CLIENTE</b> {{ a.cliente?.nome || 'Desconhecido' }}</p>
+          <div class="ag-head">{{ a.servico || a.servicoNome || 'Serviço não definido' }}</div>
+          <p><b>CLIENTE</b> {{ a.cliente || a.usuarioNome || 'Desconhecido' }}</p>
           <p><b>STATUS</b> <span class="status-chip"
             [class.status-chip-pendente]="a.status==='PENDENTE'"
             [class.status-chip-andamento]="a.status==='EM_ANDAMENTO'"
-            [class.status-chip-concluido]="a.status==='CONCLUIDO'"
+            [class.status-chip-finalizado]="a.status==='FINALIZADO'"
             [class.status-chip-cancelado]="a.status==='CANCELADO'">{{ a.status }}</span></p>
-          <p><b>PLACA</b> {{ a.veiculo?.placa || 'Sem placa' }}</p>
-          <p><b>MODELO</b> {{ a.veiculo?.modelo || 'Sem modelo' }}</p>
-          <p><b>DATA INÍCIO</b> {{ a.dataInicio }}</p>
-          <p><b>MECÂNICO</b> {{ a.mecanico?.nome || 'Não atribuído' }}</p>
+          <p><b>PLACA</b> {{ a.veiculoPlaca || 'Sem placa' }}</p>
+          <p><b>MODELO</b> {{ a.veiculoModelo || 'Sem modelo' }}</p>
+          <p><b>DATA</b> {{ a.dataHora }}</p>
+          <p><b>MECÂNICO</b> {{ a.mecanicoNome || 'Não atribuído' }}</p>
           <p><b>DESCRIÇÃO</b> {{ a.descricao }}</p>
           <div class="ag-actions">
             <a class="app-btn app-btn-sm" [routerLink]="['/agendamentos', a.id]">Detalhes</a>
@@ -141,14 +144,17 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
         <div class="form-grid-2">
           <div class="form-group">
             <label class="fg-label">Data de início</label>
-            <input class="fg-input" type="date" name="di" [(ngModel)]="form.dataInicio" />
+            <input class="fg-input" type="datetime-local" name="di" [(ngModel)]="form.dataHora" />
           </div>
           <div class="form-group">
             <label class="fg-label">Status</label>
             <select class="fg-input" name="st" [(ngModel)]="form.status">
               <option value="PENDENTE">Pendente</option>
+              <option value="AGENDADO">Agendado</option>
+              <option value="CONFIRMADO">Confirmado</option>
               <option value="EM_ANDAMENTO">Em andamento</option>
-              <option value="CONCLUIDO">Concluído</option>
+              <option value="QUASE_FINALIZADO">Quase finalizado</option>
+              <option value="FINALIZADO">Finalizado</option>
               <option value="CANCELADO">Cancelado</option>
             </select>
           </div>
@@ -179,7 +185,7 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
         </div>
         <p class="delete-msg">
           Deseja remover o agendamento <strong>#{{ agendamentoToDelete?.id }}</strong>
-          para o veículo <strong>{{ agendamentoToDelete?.veiculo?.placa }}</strong>?
+          para o veículo <strong>{{ agendamentoToDelete?.veiculoPlaca }}</strong>?
         </p>
         <p class="delete-warn">Esta ação não poderá ser desfeita.</p>
       </div>
@@ -299,7 +305,7 @@ export class AgendamentosComponent implements OnInit {
   filterUser = '';
   filterMec = '';
   modal = false;
-  form: Agendamento = { usuarioId: 0, veiculoId: 0, servicoId: 0, dataInicio: '', status: 'PENDENTE', descricao: '' };
+  form: Agendamento = { usuarioId: 0, veiculoId: 0, servicoId: 0, dataHora: '', status: 'PENDENTE', descricao: '' };
 
   deleteModal = false;
   agendamentoToDelete: Agendamento | null = null;
@@ -344,7 +350,7 @@ export class AgendamentosComponent implements OnInit {
   get filtered() {
     const s = this.search.toLowerCase();
     return this.rows.filter(r =>
-      (!s || (r.descricao?.toLowerCase().includes(s) || r.veiculo?.placa?.toLowerCase().includes(s))) &&
+      (!s || (r.descricao?.toLowerCase().includes(s) || r.veiculoPlaca?.toLowerCase().includes(s))) &&
       (!this.filterStatus || r.status === this.filterStatus) &&
       (!this.filterUser || String(r.usuarioId) === this.filterUser) &&
       (!this.filterMec || String(r.mecanicoId) === this.filterMec)
@@ -352,7 +358,7 @@ export class AgendamentosComponent implements OnInit {
   }
 
   openNew() {
-    this.form = { usuarioId: 0, veiculoId: 0, servicoId: 0, dataInicio: '', status: 'PENDENTE', descricao: '' };
+    this.form = { usuarioId: 0, veiculoId: 0, servicoId: 0, dataHora: '', status: 'PENDENTE', descricao: '' };
     this.modal = true;
   }
 
@@ -362,7 +368,7 @@ export class AgendamentosComponent implements OnInit {
   }
 
   save() {
-    if (!this.form.usuarioId || !this.form.veiculoId || !this.form.servicoId || !this.form.dataInicio) {
+    if (!this.form.usuarioId || !this.form.veiculoId || !this.form.servicoId || !this.form.dataHora) {
       alert('Por favor, preencha todos os campos obrigatórios (Cliente, Veículo, Serviço e Data de Início).');
       return;
     }
