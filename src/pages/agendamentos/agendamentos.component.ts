@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import { forkJoin, of, switchMap, catchError } from 'rxjs';
+import { catchError, forkJoin, map, of, switchMap } from 'rxjs';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { Agendamento, StatusAgendamento, User, Veiculo, Servico } from '../../models/models';
 import { AgendamentoService } from '../../services/agendamento.service';
@@ -498,11 +498,7 @@ export class AgendamentosComponent implements OnInit {
         },
         error: (err) => console.error('Erro ao carregar clientes:', err)
       });
-      // Use /users/mecanicos endpoint - returns only fully registered mechanics
-      this.userService.listMecanicos().subscribe({
-        next: (mecs) => { this.mecanicos = mecs; },
-        error: (err) => console.error('Erro ao carregar mecânicos:', err)
-      });
+      this.loadMecanicos();
       this.veiculoService.list().subscribe({
         next: (data) => { this.allVeiculos = data; this.veiculos = data; },
         error: (err) => console.error('Erro ao carregar veículos:', err)
@@ -511,18 +507,17 @@ export class AgendamentosComponent implements OnInit {
         next: (data) => { this.servicos = data; },
         error: (err) => console.error('Erro ao carregar serviços:', err)
       });
-    } else if (role === 'CLIENTE') {
+    } else if (role === 'CLIENTE' || role === 'MECANICO') {
       const cur = this.authService.currentUser;
-      this.clientes = cur ? [cur] : [];
+      this.clientes = cur && role === 'CLIENTE' ? [cur] : [];
       
-      this.userService.listMecanicos().subscribe({
-        next: (mecs) => { this.mecanicos = mecs; },
-        error: (err) => console.error('Erro ao carregar mecânicos:', err)
-      });
-      this.veiculoService.meus().subscribe({
-        next: (data) => { this.veiculos = data; },
-        error: (err) => console.error('Erro ao carregar veículos:', err)
-      });
+      this.loadMecanicos();
+      if (role === 'CLIENTE') {
+        this.veiculoService.meus().subscribe({
+          next: (data) => { this.veiculos = data; },
+          error: (err) => console.error('Erro ao carregar veículos:', err)
+        });
+      }
       this.servicoService.ativos().subscribe({
         next: (data) => { this.servicos = data; },
         error: (err) => console.error('Erro ao carregar serviços ativos:', err)
@@ -560,20 +555,17 @@ export class AgendamentosComponent implements OnInit {
           this.clientes = users.filter(u => u.role === 'CLIENTE');
         }
       });
-      // Use /users/mecanicos endpoint - returns only fully registered mechanics
-      this.userService.listMecanicos().subscribe({
-        next: (mecs) => { this.mecanicos = mecs; }
-      });
+      this.loadMecanicos();
       this.veiculoService.list().subscribe({
         next: (data) => { this.allVeiculos = data; }
       });
-    } else if (this.isCliente) {
-      this.veiculoService.meus().subscribe({
-        next: (data) => { this.veiculos = data; }
-      });
-      this.userService.listMecanicos().subscribe({
-        next: (mecs) => { this.mecanicos = mecs; }
-      });
+    } else if (this.isCliente || this.isMecanico) {
+      if (this.isCliente) {
+        this.veiculoService.meus().subscribe({
+          next: (data) => { this.veiculos = data; }
+        });
+      }
+      this.loadMecanicos();
     }
 
     this.modal = true;
@@ -589,6 +581,20 @@ export class AgendamentosComponent implements OnInit {
     this.form.usuarioId = Number(clienteId);
     // Reset vehicle when client changes to prevent ownership mismatch
     this.form.veiculoId = 0;
+  }
+
+  private loadMecanicos(): void {
+    this.userService.listMecanicos().pipe(
+      catchError((err) => {
+        console.warn('Falha ao carregar mecânicos pelo endpoint dedicado, usando filtro geral:', err);
+        return this.userService.list().pipe(
+          map(users => users.filter(user => user.role === 'MECANICO'))
+        );
+      })
+    ).subscribe({
+      next: (mecanicos) => { this.mecanicos = mecanicos; },
+      error: (err) => console.error('Erro ao carregar mecânicos:', err)
+    });
   }
 
   save() {
@@ -649,7 +655,6 @@ export class AgendamentosComponent implements OnInit {
             + 'Use usuários que se registraram normalmente no sistema, ou solicite ao desenvolvedor do backend que corrija o endpoint POST /users para inicializar os registros nas tabelas de clientes/mecânicos.';
         } else {
           this.saveError = backendMsg || 'Erro ao salvar agendamento. Verifique os dados e tente novamente.';
-        }
         }
         this.saving = false;
       }

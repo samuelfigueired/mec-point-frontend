@@ -12,7 +12,7 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   }
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
-      if (err.status === 401 || err.status === 403) {
+      if (err.status === 401) {
         // Token expirado ou inválido — limpa e redireciona para login
         localStorage.removeItem(TOKEN_KEY);
         localStorage.removeItem(USER_KEY);
