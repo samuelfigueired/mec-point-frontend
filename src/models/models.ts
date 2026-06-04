@@ -26,8 +26,9 @@ export interface Servico {
   id?: number;
   nome: string;
   descricao?: string;
-  preco: number;
+  valor: number;
   ativo: boolean;
+  categoria?: string;
 }
 
 export type StatusAgendamento = 'PENDENTE' | 'EM_ANDAMENTO' | 'CONCLUIDO' | 'CANCELADO';
