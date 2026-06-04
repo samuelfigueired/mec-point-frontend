@@ -1,8 +1,15 @@
-{
-  "/auth": {
-    "target": "http://localhost:8081",
+[
+  {
+    "context": [
+      "/auth",
+      "/users",
+      "/veiculos",
+      "/servicos",
+      "/agendamentos"
+    ],
+    "target": "https://mec-point-production.up.railway.app",
     "secure": false,
     "changeOrigin": true,
     "logLevel": "debug"
   }
-}
+]

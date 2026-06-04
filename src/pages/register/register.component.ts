@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-register',
@@ -80,6 +81,9 @@ import { RouterLink } from '@angular/router';
   `],
 })
 export class RegisterComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   nome = '';
   email = '';
   senha = '';
@@ -92,6 +96,18 @@ export class RegisterComponent {
       return;
     }
 
-    this.message = 'Cadastro ainda não está disponível nesta etapa.';
+    this.message = '';
+    this.authService.register({ nome: this.nome, email: this.email, senha: this.senha }).subscribe({
+      next: () => {
+        this.message = 'Cadastro realizado com sucesso! Redirecionando para o login...';
+        setTimeout(() => {
+          this.router.navigate(['/login']);
+        }, 1500);
+      },
+      error: (err) => {
+        console.error(err);
+        this.message = err.error?.message || 'Erro ao realizar cadastro. Tente novamente.';
+      }
+    });
   }
 }

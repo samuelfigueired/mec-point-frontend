@@ -1,7 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-login',
@@ -77,11 +78,23 @@ import { RouterLink } from '@angular/router';
   host: { ngSkipHydration: '' },
 })
 export class LoginComponent {
+  private authService = inject(AuthService);
+  private router = inject(Router);
+
   email = '';
   senha = '';
   message = '';
 
   submit() {
-    this.message = 'Autenticação ainda não está disponível nesta etapa.';
+    this.message = '';
+    this.authService.login({ email: this.email, senha: this.senha }).subscribe({
+      next: () => {
+        this.router.navigate(['/dashboard']);
+      },
+      error: (err) => {
+        console.error(err);
+        this.message = err.error?.message || 'Erro ao realizar login. Verifique suas credenciais.';
+      }
+    });
   }
 }
