@@ -41,6 +41,21 @@ import { UserService } from '../../services/user.service';
         <button class="app-btn" (click)="save()">Salvar</button>
       </div>
     </app-modal>
+
+    <app-modal [open]="deleteModal" title="Confirmar Exclusão" (close)="deleteModal=false">
+      <div style="text-align: center; padding: 10px 0;">
+        <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6;">
+          Deseja realmente remover o usuário <strong style="color: var(--accent);">{{ userToDelete?.nome }}</strong>?
+        </p>
+        <p style="margin: 0; color: #ff9e93; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
+          ⚠ Esta ação não poderá ser desfeita.
+        </p>
+      </div>
+      <div style="margin-top:20px; display:flex; gap:8px; justify-content:flex-end">
+        <button class="app-btn app-btn-ghost" (click)="deleteModal=false">Cancelar</button>
+        <button class="app-btn app-btn-danger" (click)="confirmRemove()">Remover</button>
+      </div>
+    </app-modal>
   `,
   styles: [`
     .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
@@ -62,6 +77,8 @@ export class UsuariosComponent implements OnInit {
   search = '';
   modal = false;
   form: User = { nome: '', email: '', senha: '', role: 'CLIENTE' };
+  deleteModal = false;
+  userToDelete: User | null = null;
 
   ngOnInit() {
     this.loadUsers();
@@ -126,14 +143,23 @@ export class UsuariosComponent implements OnInit {
   }
 
   remove(u: User) {
-    if (u.id && confirm(`Deseja realmente remover o usuário ${u.nome}?`)) {
-      this.userService.delete(u.id).subscribe({
+    this.userToDelete = u;
+    this.deleteModal = true;
+  }
+
+  confirmRemove() {
+    if (this.userToDelete && this.userToDelete.id) {
+      this.userService.delete(this.userToDelete.id).subscribe({
         next: () => {
+          this.deleteModal = false;
+          this.userToDelete = null;
           this.loadUsers();
         },
         error: (err) => {
           console.error('Erro ao remover usuário:', err);
           alert(err.error?.message || 'Erro ao remover usuário.');
+          this.deleteModal = false;
+          this.userToDelete = null;
         }
       });
     }
