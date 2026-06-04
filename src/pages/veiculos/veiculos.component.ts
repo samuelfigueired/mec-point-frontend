@@ -27,7 +27,7 @@ import { UserService } from '../../services/user.service';
     </div>
 
     <div class="filter-row">
-      <input class="input" placeholder="Pesquisar..." [(ngModel)]="search" />
+      <input class="f-input" placeholder="Pesquisar por placa, marca ou modelo..." [(ngModel)]="search" />
     </div>
 
     <app-table
@@ -41,46 +41,54 @@ import { UserService } from '../../services/user.service';
 
     <!-- Form Modal -->
     <app-modal [open]="modal" [title]="form.id ? 'Editar veículo' : 'Novo veículo'" (close)="modal=false">
-      <div class="form-group">
-        <label>Placa</label>
-        <input class="input" name="placa" [(ngModel)]="form.placa" placeholder="Ex: AAA-1234 ou ABC1D23" />
+      <div class="form-body">
+        <div class="form-section-label">Identificação</div>
+        <div class="form-grid-2">
+          <div class="form-group full">
+            <label class="fg-label">Placa</label>
+            <input class="fg-input" name="placa" [(ngModel)]="form.placa" placeholder="Ex: AAA-1234 ou ABC1D23" />
+          </div>
+        </div>
+
+        <div class="form-section-label" style="margin-top:16px">Especificações</div>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="fg-label">Marca</label>
+            <input class="fg-input" name="marca" [(ngModel)]="form.marca" placeholder="Ex: Chevrolet" />
+          </div>
+          <div class="form-group">
+            <label class="fg-label">Modelo</label>
+            <input class="fg-input" name="modelo" [(ngModel)]="form.modelo" placeholder="Ex: Onix" />
+          </div>
+          <div class="form-group">
+            <label class="fg-label">Ano</label>
+            <input class="fg-input" type="number" name="ano" [(ngModel)]="form.ano" placeholder="Ex: 2022" />
+          </div>
+          <div class="form-group">
+            <label class="fg-label">Câmbio</label>
+            <select class="fg-input" name="cambio" [(ngModel)]="form.cambio">
+              <option value="">Selecione...</option>
+              <option value="Manual">Manual</option>
+              <option value="Automático">Automático</option>
+            </select>
+          </div>
+        </div>
+
+        <ng-container *ngIf="isAdminOrMecanico">
+          <div class="form-section-label" style="margin-top:16px">Proprietário</div>
+          <div class="form-group">
+            <label class="fg-label">Cliente vinculado</label>
+            <select class="fg-input" name="usuarioId" [(ngModel)]="form.usuarioId">
+              <option [value]="undefined">Selecione o proprietário...</option>
+              <option *ngFor="let u of users" [value]="u.id">{{ u.nome }} ({{ u.email }})</option>
+            </select>
+          </div>
+        </ng-container>
+
+        <div class="form-error" *ngIf="errorMessage">{{ errorMessage }}</div>
       </div>
 
-      <div class="form-group">
-        <label>Marca</label>
-        <input class="input" name="marca" [(ngModel)]="form.marca" placeholder="Ex: Chevrolet" />
-      </div>
-
-      <div class="form-group">
-        <label>Modelo</label>
-        <input class="input" name="modelo" [(ngModel)]="form.modelo" placeholder="Ex: Onix" />
-      </div>
-
-      <div class="form-group">
-        <label>Ano</label>
-        <input class="input" type="number" name="ano" [(ngModel)]="form.ano" placeholder="Ex: 2022" />
-      </div>
-
-      <div class="form-group">
-        <label>Câmbio</label>
-        <select class="input" name="cambio" [(ngModel)]="form.cambio">
-          <option value="">Selecione...</option>
-          <option value="Manual">Manual</option>
-          <option value="Automático">Automático</option>
-        </select>
-      </div>
-
-      <div class="form-group" *ngIf="isAdminOrMecanico">
-        <label>Proprietário</label>
-        <select class="input" name="usuarioId" [(ngModel)]="form.usuarioId">
-          <option [value]="undefined">Selecione o proprietário...</option>
-          <option *ngFor="let u of users" [value]="u.id">{{ u.nome }} ({{ u.email }})</option>
-        </select>
-      </div>
-
-      <div class="form-error" *ngIf="errorMessage">{{ errorMessage }}</div>
-
-      <div style="margin-top:22px; display:flex; gap:8px; justify-content:flex-end">
+      <div class="form-footer">
         <button class="app-btn app-btn-ghost" [disabled]="saving" (click)="modal=false">Cancelar</button>
         <button class="app-btn" [disabled]="saving" (click)="save()">
           {{ saving ? 'Salvando...' : 'Salvar' }}
@@ -88,17 +96,25 @@ import { UserService } from '../../services/user.service';
       </div>
     </app-modal>
 
-    <!-- Custom Styled Delete Modal -->
+    <!-- Delete Modal -->
     <app-modal [open]="deleteModal" title="Confirmar Exclusão" (close)="deleteModal=false">
-      <div style="text-align: center; padding: 10px 0;">
-        <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6;">
-          Deseja realmente remover o veículo com placa <strong style="color: var(--accent);">{{ veiculoToDelete?.placa }}</strong> ({{ veiculoToDelete?.modelo }})?
+      <div class="delete-body">
+        <div class="delete-icon-svg">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="44" height="44" fill="none"
+            stroke="var(--danger)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+        <p class="delete-msg">
+          Deseja realmente remover o veículo <strong>{{ veiculoToDelete?.placa }}</strong>
+          <span *ngIf="veiculoToDelete?.modelo"> — {{ veiculoToDelete?.modelo }}</span>?
         </p>
-        <p style="margin: 0; color: #ff9e93; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">
-          ⚠ Esta ação não poderá ser desfeita.
-        </p>
+        <p class="delete-warn">Esta ação não poderá ser desfeita.</p>
       </div>
-      <div style="margin-top:20px; display:flex; gap:8px; justify-content:flex-end">
+      <div class="form-footer">
         <button class="app-btn app-btn-ghost" (click)="deleteModal=false">Cancelar</button>
         <button class="app-btn app-btn-danger" (click)="confirmRemove()">Remover</button>
       </div>
@@ -107,35 +123,62 @@ import { UserService } from '../../services/user.service';
   styles: [`
     .head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:16px }
     .subtitle { margin:6px 0 0; color:#ececec; font-size:13px }
-    .filter-row { margin-bottom:16px; max-width:340px }
-    .form-group { display: flex; flex-direction: column; margin-bottom: 14px; }
-    .form-group label { display:block; font-size:11px; text-transform:uppercase; font-weight:700; color:#555; margin: 0 0 6px; }
-    .input {
-      width: 100%;
-      padding: 12px 16px;
-      border-radius: var(--radius-sm);
-      border: 1px solid rgba(0,0,0,.08);
-      background: #ececec;
-      color: var(--text);
-      outline: none;
-      font-size: 14px;
-      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    .filter-row { margin-bottom:16px; max-width:380px }
+    .f-input {
+      width: 100%; padding: 11px 14px; border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(0,0,0,.1); background: #e9e9e9;
+      color: var(--text); outline: none; font-size: 13px; font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
     }
-    .input:focus {
-      border-color: rgba(255, 106, 0, 0.45);
-      box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.12);
+    .f-input:focus { border-color: rgba(255,106,0,.45); box-shadow: 0 0 0 3px rgba(255,106,0,.12); }
+
+    /* Form layout */
+    .form-body { display: flex; flex-direction: column; }
+    .form-section-label {
+      font-size: 10px; text-transform: uppercase; font-weight: 800;
+      letter-spacing: 1.2px; color: var(--accent); margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255,106,0,.18); padding-bottom: 6px;
     }
+    .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 16px; }
+    .form-group { margin-bottom: 0; }
+    .form-group.full { grid-column: 1 / -1; }
+
+    .fg-label {
+      display: block;
+      font-size: 10px; text-transform: uppercase; font-weight: 800;
+      color: #666; margin-bottom: 6px; letter-spacing: 0.6px;
+    }
+    .fg-icon { font-size: 12px; }
+    .fg-input {
+      width: 100%; padding: 11px 14px; border-radius: var(--radius-sm);
+      border: 1.5px solid rgba(0,0,0,.1); background: #ececec;
+      color: var(--text); outline: none; font-size: 13px; font-family: inherit;
+      transition: border-color .15s, box-shadow .15s;
+    }
+    .fg-input:focus { border-color: rgba(255,106,0,.5); box-shadow: 0 0 0 3px rgba(255,106,0,.12); }
+
     .form-error {
-      color: var(--danger);
-      background: rgba(234, 79, 66, 0.15);
-      padding: 10px 14px;
-      border-radius: var(--radius-sm);
-      font-size: 12px;
-      margin-top: 14px;
-      font-weight: 600;
-      border: 1px solid rgba(234, 79, 66, 0.2);
+      color: var(--danger); background: rgba(234,79,66,.12);
+      padding: 10px 14px; border-radius: var(--radius-sm); font-size: 12px;
+      margin-top: 14px; font-weight: 600; border: 1px solid rgba(234,79,66,.2);
     }
-    @media (max-width:900px){.head{flex-direction:column}.filter-row{max-width:none}.head .app-btn{width:100%}}
+
+    /* Footer */
+    .form-footer { display: flex; gap: 8px; justify-content: flex-end; margin-top: 22px; }
+
+    /* Delete */
+    .delete-body { text-align: center; padding: 12px 0 4px; }
+    .delete-icon-svg { display: flex; justify-content: center; margin-bottom: 16px; }
+    .delete-msg { margin: 0 0 10px; font-size: 14px; line-height: 1.6; color: var(--text); }
+    .delete-msg strong { color: var(--accent); }
+    .delete-warn { margin: 0; color: #e05b50; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    @media (max-width:900px) {
+      .head { flex-direction: column }
+      .filter-row { max-width: none }
+      .head .app-btn { width: 100% }
+      .form-grid-2 { grid-template-columns: 1fr }
+    }
   `],
 })
 export class VeiculosComponent implements OnInit {
