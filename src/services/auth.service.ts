@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, switchMap } from 'rxjs';
 import { API_BASE_URL, TOKEN_KEY, USER_KEY } from './api.config';
 import { AuthRequest, AuthResponse, RegisterRequest, Role, User } from '../models/models';
 
@@ -9,11 +9,14 @@ export class AuthService {
   private http = inject(HttpClient);
   private base = `${API_BASE_URL}/auth`;
 
-  login(req: AuthRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.base}/login`, req).pipe(
+  login(req: AuthRequest): Observable<User> {
+    return this.http.post<{ token: string }>(`${this.base}/login`, req).pipe(
       tap(res => {
         localStorage.setItem(TOKEN_KEY, res.token);
-        localStorage.setItem(USER_KEY, JSON.stringify(res.user));
+      }),
+      switchMap(() => this.me()),
+      tap(user => {
+        localStorage.setItem(USER_KEY, JSON.stringify(user));
       })
     );
   }
@@ -33,7 +36,15 @@ export class AuthService {
 
   get currentUser(): User | null {
     const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(USER_KEY) : null;
-    return raw ? JSON.parse(raw) : null;
+    if (!raw || raw === 'undefined') {
+      return null;
+    }
+    try {
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error('Erro ao ler usuário do localStorage:', e);
+      return null;
+    }
   }
 
   get role(): Role {

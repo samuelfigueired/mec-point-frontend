@@ -16,10 +16,11 @@ export interface Veiculo {
   id?: number;
   placa: string;
   modelo: string;
-  marca?: string;
+  marca: string;
   ano: number;
-  cor?: string;
+  cambio: string;
   usuarioId?: number;
+  usuarioNome?: string;
 }
 
 export interface Servico {
