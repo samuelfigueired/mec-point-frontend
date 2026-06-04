@@ -10,7 +10,7 @@
   padding: 2rem;
 }
 
-.card {
+.auth-panel {
   width: 380px;
   max-width: 100%;
   background: #1f1d1e;
@@ -95,7 +95,7 @@ input {
 }
 
 @media (max-width: 500px) {
-  .card {
+  .auth-panel {
     width: 320px;
     padding: 2rem 1.25rem;
     border-radius: 20px;

@@ -1,1 +1,182 @@
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800;900&display=swap');
+
+:root {
+	--bg: #4b4b4b;
+	--bg-deep: #3d3d3d;
+	--surface: #f2f2f2;
+	--surface-soft: #dddddd;
+	--surface-dark: #2b2b2b;
+	--text: #121212;
+	--text-light: #ffffff;
+	--text-muted: #c8c8c8;
+	--accent: #ff6a00;
+	--accent-hover: #f15f00;
+	--success: #59d26c;
+	--danger: #ea4f42;
+	--warning: #f2c14e;
+	--radius-lg: 22px;
+	--radius-md: 16px;
+	--radius-sm: 10px;
+	--shadow-soft: 0 14px 34px rgba(0, 0, 0, 0.2);
+	--border-light: rgba(255, 255, 255, 0.12);
+	--font: 'Montserrat', 'Segoe UI', Arial, sans-serif;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+html,
+body {
+	margin: 0;
+	padding: 0;
+	min-height: 100%;
+	font-family: var(--font);
+	color: var(--text-light);
+	background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.06), transparent 22%),
+		linear-gradient(180deg, #545454 0%, #474747 100%);
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+	font-family: inherit;
+}
+
+button {
+	cursor: pointer;
+	border: none;
+}
+
+.app-btn {
+	background: linear-gradient(180deg, #ff7c1d 0%, var(--accent) 100%);
+	color: #fff;
+	padding: 11px 20px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.6px;
+	text-transform: uppercase;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+	box-shadow: 0 10px 18px rgba(255, 106, 0, 0.22);
+}
+
+.app-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 14px 24px rgba(255, 106, 0, 0.28);
+}
+
+.app-btn-sm {
+	padding: 7px 12px;
+	font-size: 10px;
+}
+
+.app-btn-ghost {
+	background: transparent;
+	color: var(--accent);
+	border: 1px solid var(--accent);
+	box-shadow: none;
+}
+
+.app-btn-danger {
+	background: linear-gradient(180deg, #ff6a63 0%, var(--danger) 100%);
+	box-shadow: 0 10px 18px rgba(234, 79, 66, 0.2);
+}
+
+.app-panel {
+	background: #5a5a5a;
+	border: 1px solid var(--border-light);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-soft);
+	padding: 20px;
+}
+
+.app-panel-light {
+	background: var(--surface);
+	color: var(--text);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow-soft);
+	padding: 20px;
+}
+
+.page-title {
+	color: var(--accent);
+	font-size: clamp(22px, 2vw, 32px);
+	font-weight: 900;
+	letter-spacing: 1px;
+	text-transform: uppercase;
+	margin: 0 0 18px;
+}
+
+.app-input {
+	width: 100%;
+	padding: 12px 16px;
+	border-radius: 999px;
+	border: 1px solid rgba(0, 0, 0, 0.08);
+	background: #e9e9e9;
+	color: var(--text);
+	outline: none;
+	font-size: 14px;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-input:focus {
+	border-color: rgba(255, 106, 0, 0.45);
+	box-shadow: 0 0 0 3px rgba(255, 106, 0, 0.12);
+}
+
+.status-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 10px;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+}
+
+.status-chip-pendente {
+	background: var(--warning);
+	color: #221a00;
+}
+
+.status-chip-andamento {
+	background: #3b82f6;
+	color: #fff;
+}
+
+.status-chip-concluido {
+	background: var(--success);
+	color: #fff;
+}
+
+.status-chip-cancelado {
+	background: var(--danger);
+	color: #fff;
+}
+
+.empty-state {
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px dashed rgba(255, 255, 255, 0.18);
+	border-radius: var(--radius-md);
+	padding: 24px;
+	color: #fff;
+}
+
+.empty-state strong {
+	display: block;
+	margin-bottom: 8px;
+}
+
+.empty-state p {
+	margin: 0;
+	color: var(--text-muted);
+}
