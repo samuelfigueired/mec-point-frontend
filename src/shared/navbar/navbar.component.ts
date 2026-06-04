@@ -14,10 +14,6 @@ import { AuthService } from '../../services/auth.service';
         <small>Visualização do sistema</small>
       </div>
       <div class="toolbar">
-        <div class="search">
-          <input type="text" placeholder="Pesquisar..." />
-          <span>⌕</span>
-        </div>
         <div class="profile-container">
           <button class="avatar-btn" (click)="toggleDropdown()" aria-label="Menu do perfil">
             <div class="avatar"></div>
@@ -26,6 +22,7 @@ import { AuthService } from '../../services/auth.service';
             <div class="user-info" *ngIf="currentUser">
               <span class="user-name">{{ currentUser.nome }}</span>
               <span class="user-email">{{ currentUser.email }}</span>
+              <span class="user-role">{{ getRoleLabel(currentUser.role) }}</span>
             </div>
             <button class="dropdown-item logout-btn" (click)="logout()">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" style="margin-right: 2px;">
@@ -54,19 +51,7 @@ import { AuthService } from '../../services/auth.service';
     .brand-copy strong { font-size: 22px; font-weight: 900; letter-spacing: 1px; }
     .brand-copy small { color: #4d4d4d; font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; }
     .toolbar { display: flex; align-items: center; gap: 16px; margin-left: auto; }
-    .search { position: relative; width: min(100vw, 430px); }
-    .search input {
-      width: 100%;
-      padding: 13px 46px 13px 18px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,.08);
-      background: #ececec;
-      color: #111;
-      font-size: 14px;
-      outline: none;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
-    }
-    .search span { position: absolute; right: 16px; top: 50%; transform: translateY(-50%); color: #111; font-size: 22px; }
+
     
     .profile-container {
       position: relative;
@@ -120,6 +105,14 @@ import { AuthService } from '../../services/auth.service';
       color: var(--text-muted);
       margin-top: 2px;
     }
+    .user-role {
+      font-size: 10px;
+      color: var(--accent);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
     .dropdown-item {
       width: 100%;
       background: none;
@@ -144,7 +137,7 @@ import { AuthService } from '../../services/auth.service';
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @media (max-width: 920px) { .navbar { flex-direction: column; align-items: flex-start; } .toolbar { width: 100%; } .search { width: 100%; } }
+    @media (max-width: 920px) { .navbar { flex-direction: column; align-items: flex-start; } .toolbar { width: 100%; } }
     @media (max-width: 768px) { .navbar { padding: 14px 16px; } .brand-copy strong { font-size: 18px; } }
   `],
 })
@@ -157,6 +150,15 @@ export class NavbarComponent {
 
   get currentUser() {
     return this.authService.currentUser;
+  }
+
+  getRoleLabel(role: string): string {
+    const map: Record<string, string> = {
+      'ADMIN': 'Administrador',
+      'MECANICO': 'Mecânico',
+      'CLIENTE': 'Cliente'
+    };
+    return map[role] || role;
   }
 
   toggleDropdown() {

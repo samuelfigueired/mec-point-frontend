@@ -115,8 +115,8 @@ import { UserService } from '../../services/user.service';
         <p class="delete-warn">Esta ação não poderá ser desfeita.</p>
       </div>
       <div class="form-footer">
-        <button class="app-btn app-btn-ghost" (click)="deleteModal=false">Cancelar</button>
-        <button class="app-btn app-btn-danger" (click)="confirmRemove()">Remover</button>
+        <button class="app-btn app-btn-ghost" [disabled]="removing" (click)="deleteModal=false">Cancelar</button>
+        <button class="app-btn app-btn-danger" [disabled]="removing" (click)="confirmRemove()">{{ removing ? 'Removendo...' : 'Remover' }}</button>
       </div>
     </app-modal>
   `,
@@ -193,6 +193,7 @@ export class VeiculosComponent implements OnInit {
   modal = false;
   loading = false;
   saving = false;
+  removing = false;
   errorMessage = '';
   form: Veiculo = { placa: '', modelo: '', marca: '', ano: new Date().getFullYear(), cambio: '' };
 
@@ -336,9 +337,10 @@ export class VeiculosComponent implements OnInit {
 
   confirmRemove() {
     if (this.veiculoToDelete && this.veiculoToDelete.id) {
-      this.loading = true;
+      this.removing = true;
       this.veiculoService.delete(this.veiculoToDelete.id).subscribe({
         next: () => {
+          this.removing = false;
           this.deleteModal = false;
           this.veiculoToDelete = null;
           this.loadData();
@@ -346,9 +348,9 @@ export class VeiculosComponent implements OnInit {
         error: (err) => {
           console.error(err);
           this.errorMessage = err.error?.message || 'Erro ao excluir o veículo.';
+          this.removing = false;
           this.deleteModal = false;
           this.veiculoToDelete = null;
-          this.loading = false;
         }
       });
     }

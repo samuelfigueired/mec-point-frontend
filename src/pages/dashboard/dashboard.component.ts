@@ -18,7 +18,6 @@ import { Agendamento, User, Veiculo, Servico } from '../../models/models';
         <h1 class="page-title">Dashboard</h1>
         <p class="subtitle">Visão geral do sistema MEC Point com dados em tempo real.</p>
       </div>
-      <button class="app-btn" routerLink="/agendamentos">Novo agendamento</button>
     </div>
 
     <div class="grid">
@@ -184,94 +183,166 @@ export class DashboardComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
-  overview = [
-    { label: 'Usuários', value: '—', note: 'Carregando...' },
-    { label: 'Veículos', value: '—', note: 'Carregando...' },
-    { label: 'Serviços', value: '—', note: 'Carregando...' },
-    { label: 'Agendamentos', value: '—', note: 'Carregando...' },
-    { label: 'Eventos', value: '—', note: 'Carregando...' },
-  ];
-
+  overview: { label: string; value: string; note: string; }[] = [];
   recentAgendamentos: Agendamento[] = [];
 
-  get isAdminOrMecanico(): boolean {
-    const r = this.authService.role;
-    return r === 'ADMIN' || r === 'MECANICO';
+  ngOnInit() {
+    this.initOverviewPlaceholder();
+    this.loadDashboardData();
   }
 
-  ngOnInit() {
-    this.loadDashboardData();
+  initOverviewPlaceholder() {
+    const role = this.authService.role;
+    if (role === 'ADMIN') {
+      this.overview = [
+        { label: 'Usuários', value: '—', note: 'Carregando...' },
+        { label: 'Veículos', value: '—', note: 'Carregando...' },
+        { label: 'Serviços', value: '—', note: 'Carregando...' },
+        { label: 'Agendamentos', value: '—', note: 'Carregando...' },
+        { label: 'Eventos', value: '—', note: 'Carregando...' },
+      ];
+    } else if (role === 'CLIENTE') {
+      this.overview = [
+        { label: 'Meus Veículos', value: '—', note: 'Carregando...' },
+        { label: 'Serviços Disponíveis', value: '—', note: 'Carregando...' },
+        { label: 'Meus Agendamentos', value: '—', note: 'Carregando...' },
+      ];
+    } else if (role === 'MECANICO') {
+      this.overview = [
+        { label: 'Agendamentos Atribuídos', value: '—', note: 'Carregando...' },
+        { label: 'Em Andamento', value: '—', note: 'Carregando...' },
+        { label: 'Confirmados / Agendados', value: '—', note: 'Carregando...' },
+        { label: 'Finalizados', value: '—', note: 'Carregando...' },
+      ];
+    }
   }
 
   loadDashboardData() {
     this.loading = true;
     this.errorMessage = '';
+    const role = this.authService.role;
 
-    forkJoin({
-      users: this.userService.list(),
-      veiculos: this.veiculoService.list(),
-      servicos: this.servicoService.list(),
-      agendamentos: this.agendamentoService.list(),
-    }).subscribe({
-      next: ({ users, veiculos, servicos, agendamentos }) => {
-        // --- Users card ---
-        this.overview[0] = {
-          label: 'Usuários',
-          value: String(users.length),
-          note: `${users.length} cadastrado${users.length !== 1 ? 's' : ''} no sistema`,
-        };
+    if (role === 'ADMIN') {
+      forkJoin({
+        users: this.userService.list(),
+        veiculos: this.veiculoService.list(),
+        servicos: this.servicoService.list(),
+        agendamentos: this.agendamentoService.list(),
+      }).subscribe({
+        next: ({ users, veiculos, servicos, agendamentos }) => {
+          this.overview[0] = {
+            label: 'Usuários',
+            value: String(users.length),
+            note: `${users.length} cadastrado${users.length !== 1 ? 's' : ''} no sistema`,
+          };
+          this.overview[1] = {
+            label: 'Veículos',
+            value: String(veiculos.length),
+            note: `${veiculos.length} cadastrado${veiculos.length !== 1 ? 's' : ''} no sistema`,
+          };
+          const ativos = servicos.filter(s => s.ativo).length;
+          this.overview[2] = {
+            label: 'Serviços',
+            value: String(servicos.length),
+            note: `${ativos} ativo${ativos !== 1 ? 's' : ''} de ${servicos.length} total`,
+          };
+          const pendentes = agendamentos.filter(a => a.status === 'PENDENTE').length;
+          const emAndamento = agendamentos.filter(a => a.status === 'EM_ANDAMENTO').length;
+          const finalizados = agendamentos.filter(a => a.status === 'FINALIZADO').length;
+          this.overview[3] = {
+            label: 'Agendamentos',
+            value: String(agendamentos.length),
+            note: `${pendentes} pendente${pendentes !== 1 ? 's' : ''}, ${emAndamento} em andamento, ${finalizados} finalizado${finalizados !== 1 ? 's' : ''}`,
+          };
 
-        // --- Vehicles card ---
-        this.overview[1] = {
-          label: 'Veículos',
-          value: String(veiculos.length),
-          note: `${veiculos.length} cadastrado${veiculos.length !== 1 ? 's' : ''} no sistema`,
-        };
+          this.loadEventosCount(agendamentos);
 
-        // --- Services card ---
-        const ativos = servicos.filter(s => s.ativo).length;
-        this.overview[2] = {
-          label: 'Serviços',
-          value: String(servicos.length),
-          note: `${ativos} ativo${ativos !== 1 ? 's' : ''} de ${servicos.length} total`,
-        };
+          this.recentAgendamentos = agendamentos
+            .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
+            .slice(0, 5);
+          this.loading = false;
+        },
+        error: (err) => this.handleError(err)
+      });
+    } else if (role === 'CLIENTE') {
+      forkJoin({
+        veiculos: this.veiculoService.meus(),
+        servicos: this.servicoService.ativos(),
+        agendamentos: this.agendamentoService.meus(),
+      }).subscribe({
+        next: ({ veiculos, servicos, agendamentos }) => {
+          this.overview[0] = {
+            label: 'Meus Veículos',
+            value: String(veiculos.length),
+            note: `${veiculos.length} veículo${veiculos.length !== 1 ? 's' : ''} cadastrado${veiculos.length !== 1 ? 's' : ''}`,
+          };
+          this.overview[1] = {
+            label: 'Serviços Disponíveis',
+            value: String(servicos.length),
+            note: `${servicos.length} serviço${servicos.length !== 1 ? 's' : ''} ativo${servicos.length !== 1 ? 's' : ''}`,
+          };
+          const pendentes = agendamentos.filter(a => a.status === 'PENDENTE').length;
+          const emAndamento = agendamentos.filter(a => a.status === 'EM_ANDAMENTO').length;
+          const finalizados = agendamentos.filter(a => a.status === 'FINALIZADO').length;
+          this.overview[2] = {
+            label: 'Meus Agendamentos',
+            value: String(agendamentos.length),
+            note: `${pendentes} pendente${pendentes !== 1 ? 's' : ''}, ${emAndamento} em andamento, ${finalizados} finalizado${finalizados !== 1 ? 's' : ''}`,
+          };
 
-        // --- Appointments card ---
-        const pendentes = agendamentos.filter(a => a.status === 'PENDENTE').length;
-        const emAndamento = agendamentos.filter(a => a.status === 'EM_ANDAMENTO').length;
-        const finalizados = agendamentos.filter(a => a.status === 'FINALIZADO').length;
-        this.overview[3] = {
-          label: 'Agendamentos',
-          value: String(agendamentos.length),
-          note: `${pendentes} pendente${pendentes !== 1 ? 's' : ''}, ${emAndamento} em andamento, ${finalizados} finalizado${finalizados !== 1 ? 's' : ''}`,
-        };
-
-        // --- Events card (count from agendamentos events) ---
-        this.loadEventosCount(agendamentos);
-
-        // --- Recent appointments table ---
-        this.recentAgendamentos = agendamentos
-          .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
-          .slice(0, 5);
-
+          this.recentAgendamentos = agendamentos
+            .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
+            .slice(0, 5);
+          this.loading = false;
+        },
+        error: (err) => this.handleError(err)
+      });
+    } else if (role === 'MECANICO') {
+      const mecId = this.authService.currentUser?.id;
+      if (!mecId) {
+        this.errorMessage = 'Identificação do mecânico não encontrada.';
         this.loading = false;
-      },
-      error: (err) => {
-        console.error('Erro ao carregar dados do dashboard:', err);
-        this.errorMessage = 'Erro ao carregar dados do dashboard.';
-        this.overview = [
-          { label: 'Usuários', value: '!', note: 'Erro ao carregar' },
-          { label: 'Veículos', value: '!', note: 'Erro ao carregar' },
-          { label: 'Serviços', value: '!', note: 'Erro ao carregar' },
-          { label: 'Agendamentos', value: '!', note: 'Erro ao carregar' },
-          { label: 'Eventos', value: '!', note: 'Erro ao carregar' },
-        ];
-        this.loading = false;
+        return;
       }
-    });
+      forkJoin({
+        dash: this.agendamentoService.dashboardMecanico(),
+        agendamentos: this.agendamentoService.byMecanico(mecId),
+      }).subscribe({
+        next: ({ dash, agendamentos }) => {
+          this.overview[0] = {
+            label: 'Agendamentos Atribuídos',
+            value: String(dash.total),
+            note: 'Total atribuído a você',
+          };
+          this.overview[1] = {
+            label: 'Em Andamento',
+            value: String(dash.emAndamento),
+            note: 'Serviços sendo executados',
+          };
+          this.overview[2] = {
+            label: 'Confirmados / Agendados',
+            value: String(dash.confirmados + dash.agendados),
+            note: 'Prontos para iniciar',
+          };
+          this.overview[3] = {
+            label: 'Finalizados',
+            value: String(dash.finalizados),
+            note: 'Total concluído por você',
+          };
+
+          this.recentAgendamentos = agendamentos
+            .sort((a, b) => new Date(b.dataHora).getTime() - new Date(a.dataHora).getTime())
+            .slice(0, 5);
+          this.loading = false;
+        },
+        error: (err) => this.handleError(err)
+      });
+    }
   }
 
   loadEventosCount(agendamentos: Agendamento[]) {
+    if (this.overview.length <= 4) return;
+
     if (agendamentos.length === 0) {
       this.overview[4] = {
         label: 'Eventos',
@@ -281,7 +352,6 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    // Fetch events for each agendamento and sum them
     const eventRequests = agendamentos
       .filter(a => a.id != null)
       .map(a => this.agendamentoService.listEventos(a.id!));
@@ -308,6 +378,16 @@ export class DashboardComponent implements OnInit {
         };
       }
     });
+  }
+
+  handleError(err: any) {
+    console.error('Erro ao carregar dados do dashboard:', err);
+    this.errorMessage = 'Erro ao carregar dados do dashboard.';
+    this.overview.forEach(item => {
+      item.value = '!';
+      item.note = 'Erro ao carregar';
+    });
+    this.loading = false;
   }
 
   formatStatus(status: string): string {

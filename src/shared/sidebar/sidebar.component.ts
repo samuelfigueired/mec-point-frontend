@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -11,12 +12,12 @@ import { CommonModule } from '@angular/common';
       <div class="logo">MEC <span>POINT</span></div>
       <nav>
         <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
-        <a routerLink="/usuarios" routerLinkActive="active">Usuários</a>
-        <a routerLink="/veiculos" routerLinkActive="active">Veículos</a>
+        <a *ngIf="role === 'ADMIN'" routerLink="/usuarios" routerLinkActive="active">Usuários</a>
+        <a *ngIf="role === 'CLIENTE' || role === 'ADMIN'" routerLink="/veiculos" routerLinkActive="active">Veículos</a>
         <a routerLink="/servicos" routerLinkActive="active">Serviços</a>
         <a routerLink="/agendamentos" routerLinkActive="active">Agendamentos</a>
       </nav>
-      <div class="status">Modo de visualização</div>
+      <div class="status">Modo: {{ roleLabel }}</div>
     </aside>
   `,
   styles: [`
@@ -88,4 +89,18 @@ import { CommonModule } from '@angular/common';
   `],
 })
 export class SidebarComponent {
+  private authService = inject(AuthService);
+
+  get role() {
+    return this.authService.role;
+  }
+
+  get roleLabel() {
+    const map = {
+      'ADMIN': 'Administrador',
+      'MECANICO': 'Mecânico',
+      'CLIENTE': 'Cliente'
+    };
+    return map[this.role] || this.role;
+  }
 }

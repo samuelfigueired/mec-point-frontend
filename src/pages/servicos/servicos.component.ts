@@ -5,6 +5,7 @@ import { TableComponent, TableColumn } from '../../shared/table/table.component'
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { Servico } from '../../models/models';
 import { ServicoService } from '../../services/servico.service';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-servicos',
@@ -21,7 +22,7 @@ import { ServicoService } from '../../services/servico.service';
           </ng-container>
         </p>
       </div>
-      <button class="app-btn" (click)="openNew()">+ Novo</button>
+      <button *ngIf="isAdmin" class="app-btn" (click)="openNew()">+ Novo</button>
     </div>
     <div class="filter-row">
       <input class="f-input" placeholder="Pesquisar por nome..." [(ngModel)]="search" />
@@ -31,6 +32,7 @@ import { ServicoService } from '../../services/servico.service';
       [columns]="columns" 
       [rows]="filtered" 
       [loading]="loading"
+      [actions]="isAdmin"
       emptyMessage="Nenhum serviço disponível." 
       (edit)="openEdit($event)" 
       (remove)="remove($event)" 
@@ -74,8 +76,8 @@ import { ServicoService } from '../../services/servico.service';
       </div>
 
       <div class="form-footer">
-        <button class="app-btn app-btn-ghost" (click)="modal=false">Cancelar</button>
-        <button class="app-btn" (click)="save()">Salvar</button>
+        <button class="app-btn app-btn-ghost" [disabled]="saving" (click)="modal=false">Cancelar</button>
+        <button class="app-btn" [disabled]="saving" (click)="save()">{{ saving ? 'Salvando...' : 'Salvar' }}</button>
       </div>
     </app-modal>
 
@@ -97,8 +99,8 @@ import { ServicoService } from '../../services/servico.service';
         <p class="delete-warn">Esta ação não poderá ser desfeita.</p>
       </div>
       <div class="form-footer">
-        <button class="app-btn app-btn-ghost" (click)="deleteModal=false">Cancelar</button>
-        <button class="app-btn app-btn-danger" (click)="confirmRemove()">Remover</button>
+        <button class="app-btn app-btn-ghost" [disabled]="removing" (click)="deleteModal=false">Cancelar</button>
+        <button class="app-btn app-btn-danger" [disabled]="removing" (click)="confirmRemove()">{{ removing ? 'Removendo...' : 'Remover' }}</button>
       </div>
     </app-modal>
   `,
@@ -188,6 +190,11 @@ import { ServicoService } from '../../services/servico.service';
 })
 export class ServicosComponent implements OnInit {
   private servicoService = inject(ServicoService);
+  private authService = inject(AuthService);
+
+  get isAdmin() {
+    return this.authService.role === 'ADMIN';
+  }
 
   columns: TableColumn[] = [
     { key: 'nome', label: 'Nome' },
@@ -202,6 +209,8 @@ export class ServicosComponent implements OnInit {
   modal = false;
   error = '';
   loading = false;
+  saving = false;
+  removing = false;
   deleteModal = false;
   serviceToDelete: Servico | null = null;
   
@@ -213,7 +222,11 @@ export class ServicosComponent implements OnInit {
 
   load() {
     this.loading = true;
-    this.servicoService.list().subscribe({
+    const obs = this.isAdmin
+      ? this.servicoService.list()
+      : this.servicoService.ativos();
+
+    obs.subscribe({
       next: (data) => {
         this.rawServices = data;
         this.rows = data.map(s => ({
@@ -268,18 +281,21 @@ export class ServicosComponent implements OnInit {
     }
 
     this.error = '';
+    this.saving = true;
     const obs = this.form.id
       ? this.servicoService.update(this.form.id, this.form)
       : this.servicoService.create(this.form);
 
     obs.subscribe({
       next: () => {
+        this.saving = false;
         this.modal = false;
         this.load();
       },
       error: (err) => {
         console.error(err);
         this.error = err.error?.message || 'Erro ao salvar o serviço. Verifique os dados.';
+        this.saving = false;
       }
     });
   }
@@ -291,8 +307,10 @@ export class ServicosComponent implements OnInit {
 
   confirmRemove() {
     if (!this.serviceToDelete?.id) return;
+    this.removing = true;
     this.servicoService.delete(this.serviceToDelete.id).subscribe({
       next: () => {
+        this.removing = false;
         this.deleteModal = false;
         this.serviceToDelete = null;
         this.load();
@@ -300,6 +318,7 @@ export class ServicosComponent implements OnInit {
       error: (err) => {
         console.error(err);
         alert(err.error?.message || 'Erro ao excluir o serviço.');
+        this.removing = false;
         this.deleteModal = false;
         this.serviceToDelete = null;
       }
