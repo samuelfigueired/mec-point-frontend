@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TableComponent, TableColumn } from '../../shared/table/table.component';
 import { ModalComponent } from '../../shared/modal/modal.component';
 import { Role, User } from '../../models/models';
+import { UserService } from '../../services/user.service';
 
 @Component({
   selector: 'app-usuarios',
@@ -13,7 +14,7 @@ import { Role, User } from '../../models/models';
     <div class="head">
       <div>
         <h1 class="page-title">Usuários</h1>
-        <p class="subtitle">Nenhum usuário cadastrado no momento.</p>
+        <p class="subtitle">{{ rows.length === 0 ? 'Nenhum usuário cadastrado no momento.' : rows.length + (rows.length === 1 ? ' usuário cadastrado.' : ' usuários cadastrados.') }}</p>
       </div>
       <button class="app-btn" (click)="openNew()">+ Novo</button>
     </div>
@@ -49,7 +50,9 @@ import { Role, User } from '../../models/models';
     @media (max-width: 900px) { .head { flex-direction: column; } .filter-row { max-width: none; } .head .app-btn { width: 100%; } }
   `],
 })
-export class UsuariosComponent {
+export class UsuariosComponent implements OnInit {
+  private userService = inject(UserService);
+
   columns: TableColumn[] = [
     { key: 'nome', label: 'Nome' },
     { key: 'email', label: 'Email' },
@@ -60,12 +63,79 @@ export class UsuariosComponent {
   modal = false;
   form: User = { nome: '', email: '', senha: '', role: 'CLIENTE' };
 
+  ngOnInit() {
+    this.loadUsers();
+  }
+
+  loadUsers() {
+    this.userService.list().subscribe({
+      next: (users) => {
+        this.rows = users;
+      },
+      error: (err) => {
+        console.error('Erro ao listar usuários:', err);
+      }
+    });
+  }
+
   get filtered() {
     const s = this.search.toLowerCase();
     return this.rows.filter(r => !s || r.nome.toLowerCase().includes(s) || r.email.toLowerCase().includes(s));
   }
-  openNew() { this.form = { nome: '', email: '', senha: '', role: 'CLIENTE' }; this.modal = true; }
-  openEdit(u: User) { this.form = { ...u }; this.modal = true; }
-  save() { this.modal = false; }
-  remove(_: User) { }
+
+  openNew() {
+    this.form = { nome: '', email: '', senha: '', role: 'CLIENTE' };
+    this.modal = true;
+  }
+
+  openEdit(u: User) {
+    this.form = { ...u };
+    this.modal = true;
+  }
+
+  save() {
+    const isEditing = !!this.form.id;
+    const targetRole = this.form.role;
+
+    const request = isEditing
+      ? this.userService.update(this.form.id!, this.form)
+      : this.userService.create(this.form);
+
+    request.subscribe({
+      next: (savedUser) => {
+        const userId = savedUser.id || this.form.id!;
+        
+        this.userService.updateRole(userId, targetRole).subscribe({
+          next: () => {
+            this.modal = false;
+            this.loadUsers();
+          },
+          error: (err) => {
+            console.error('Erro ao atualizar papel do usuário:', err);
+            this.modal = false;
+            this.loadUsers();
+            alert('Usuário salvo, mas não foi possível alterar o tipo de usuário: ' + (err.error?.message || 'Permissão negada.'));
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Erro ao salvar usuário:', err);
+        alert(err.error?.message || 'Erro ao salvar usuário.');
+      }
+    });
+  }
+
+  remove(u: User) {
+    if (u.id && confirm(`Deseja realmente remover o usuário ${u.nome}?`)) {
+      this.userService.delete(u.id).subscribe({
+        next: () => {
+          this.loadUsers();
+        },
+        error: (err) => {
+          console.error('Erro ao remover usuário:', err);
+          alert(err.error?.message || 'Erro ao remover usuário.');
+        }
+      });
+    }
+  }
 }
