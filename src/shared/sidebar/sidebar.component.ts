@@ -12,6 +12,7 @@ import { AuthService } from '../../services/auth.service';
       <div class="logo">MEC <span>POINT</span></div>
       <nav>
         <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/perfil" routerLinkActive="active">Perfil</a>
         <a *ngIf="role === 'ADMIN'" routerLink="/usuarios" routerLinkActive="active">Usuários</a>
         <a *ngIf="role === 'CLIENTE' || role === 'ADMIN'" routerLink="/veiculos" routerLinkActive="active">Veículos</a>
         <a routerLink="/servicos" routerLinkActive="active">Serviços</a>
