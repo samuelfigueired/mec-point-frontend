@@ -24,6 +24,7 @@ export const routes: Routes = [
         loadComponent: () => import('../pages/veiculos/veiculos.component').then(m => m.VeiculosComponent) 
       },
       { path: 'servicos', loadComponent: () => import('../pages/servicos/servicos.component').then(m => m.ServicosComponent) },
+      { path: 'perfil', loadComponent: () => import('../pages/perfil/perfil.component').then(m => m.PerfilComponent) },
       { path: 'agendamentos', loadComponent: () => import('../pages/agendamentos/agendamentos.component').then(m => m.AgendamentosComponent) },
       { path: 'agendamentos/:id', loadComponent: () => import('../pages/agendamentos/agendamento-detalhe.component').then(m => m.AgendamentoDetalheComponent) },
     ],
