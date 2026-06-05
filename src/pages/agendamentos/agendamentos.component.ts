@@ -34,7 +34,25 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
           </ng-container>
         </p>
       </div>
-      <button *ngIf="isCliente || isAdmin" class="app-btn" (click)="openNew()">+ Novo agendamento</button>
+      <div class="head-actions">
+        <div class="view-toggle">
+          <button class="view-btn" [class.active]="viewMode === 'grid'" (click)="viewMode = 'grid'" title="Visualização em grade">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+              <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+            </svg>
+            Grade
+          </button>
+          <button class="view-btn" [class.active]="viewMode === 'list'" (click)="viewMode = 'list'" title="Visualização em lista">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/>
+              <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+            </svg>
+            Lista
+          </button>
+        </div>
+        <button *ngIf="isCliente || isAdmin" class="app-btn" (click)="openNew()">+ Novo agendamento</button>
+      </div>
     </div>
 
     <div class="filters">
@@ -59,9 +77,10 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
       </select>
     </div>
 
-    <!-- Shimmer loading skeleton list -->
-    <div class="cards" *ngIf="loading">
+    <!-- Shimmer loading skeleton (grade) -->
+    <div class="cards" *ngIf="loading && viewMode === 'grid'">
       <div class="ag-card skeleton-card" *ngFor="let placeholder of [1, 2, 3]">
+        <div class="shimmer" style="width: 100%; height: 140px; border-radius: var(--radius-sm); margin-bottom: 4px;"></div>
         <div class="ag-card-header">
           <div class="shimmer header-shim" style="width: 70%; height: 16px;"></div>
           <div class="shimmer id-shim" style="width: 40px; height: 16px; border-radius: 999px;"></div>
@@ -78,9 +97,32 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
       </div>
     </div>
 
-    <!-- Real cards list -->
-    <div class="cards" *ngIf="!loading && filtered.length">
+    <!-- Shimmer loading skeleton (lista) -->
+    <div class="list-view" *ngIf="loading && viewMode === 'list'">
+      <div class="list-item skeleton-list" *ngFor="let placeholder of [1, 2, 3, 4]">
+        <div class="shimmer" style="width: 60px; height: 20px; border-radius: 999px; flex-shrink:0;"></div>
+        <div class="list-item-main">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="shimmer" style="width: 42px; height: 32px; border-radius: var(--radius-sm); flex-shrink:0;"></div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <div class="shimmer" style="width: 200px; height: 14px;"></div>
+              <div class="shimmer" style="width: 140px; height: 11px;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="shimmer" style="width: 120px; height: 12px;"></div>
+        <div class="shimmer" style="width: 90px; height: 12px;"></div>
+        <div class="shimmer btn-shim" style="width: 70px; height: 28px; border-radius: var(--radius-sm); flex-shrink:0;"></div>
+      </div>
+    </div>
+
+    <!-- GRADE: Real cards -->
+    <div class="cards" *ngIf="!loading && filtered.length && viewMode === 'grid'">
       <div class="ag-card" *ngFor="let a of filtered">
+        <div class="ag-card-image">
+          <img [src]="getCarImage(a)" alt="Veículo" class="ag-vehicle-img" />
+        </div>
+
         <div class="ag-card-header">
           <div class="ag-service">{{ a.servico || a.servicoNome || 'Serviço não definido' }}</div>
           <span class="ag-id">#{{ a.id }}</span>
@@ -124,9 +166,47 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
       </div>
     </div>
 
+    <!-- LISTA: List view -->
+    <div class="list-view" *ngIf="!loading && filtered.length && viewMode === 'list'">
+      <div class="list-header">
+        <span>Status</span>
+        <span>Serviço / Veículo</span>
+        <span>Cliente</span>
+        <span>Mecânico</span>
+        <span>Data/Hora</span>
+        <span></span>
+      </div>
+      <div class="list-item" *ngFor="let a of filtered">
+        <div class="list-status">
+          <span class="status-chip status-chip-sm"
+            [class.status-chip-pendente]="a.status==='PENDENTE'"
+            [class.status-chip-andamento]="a.status==='EM_ANDAMENTO' || a.status==='AGENDADO' || a.status==='CONFIRMADO' || a.status==='QUASE_FINALIZADO'"
+            [class.status-chip-concluido]="a.status==='FINALIZADO'"
+            [class.status-chip-cancelado]="a.status==='CANCELADO'">{{ formatStatus(a.status) }}</span>
+        </div>
+        <div class="list-item-main">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <img [src]="getCarImage(a)" alt="Veículo" style="width: 42px; height: 32px; object-fit: cover; border-radius: var(--radius-sm); border: 1.5px solid rgba(0,0,0,0.1); flex-shrink: 0;" />
+            <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
+              <span class="list-service">{{ a.servico || a.servicoNome || 'Serviço não definido' }}</span>
+              <span class="list-vehicle">{{ a.veiculoModelo || '—' }} <small class="text-muted">({{ a.veiculoPlaca || '—' }})</small></span>
+            </div>
+          </div>
+        </div>
+        <span class="list-cell">{{ a.cliente || a.usuarioNome || '—' }}</span>
+        <span class="list-cell list-cell-muted">{{ a.mecanicoNome || '—' }}</span>
+        <span class="list-cell list-cell-date">{{ formatDate(a.dataHora) }}</span>
+        <div class="list-actions">
+          <a class="app-btn app-btn-sm" [routerLink]="['/agendamentos', a.id]">Detalhes</a>
+          <button *ngIf="isAdmin" class="app-btn app-btn-sm app-btn-ghost" (click)="openEdit(a)">Editar</button>
+          <button *ngIf="isAdmin" class="app-btn app-btn-sm app-btn-danger" (click)="remove(a)">Excluir</button>
+        </div>
+      </div>
+    </div>
+
     <div class="empty-state app-panel" *ngIf="!loading && !filtered.length">
       <strong>Nenhum agendamento encontrado.</strong>
-      <p>Quando houver registros, eles aparecerão em cartões nesta tela.</p>
+      <p>Quando houver registros, eles aparecerão nesta tela.</p>
     </div>
 
     <!-- Form Modal -->
@@ -231,6 +311,7 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
   `,
   styles: [`
     .head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 16px; }
+    .head-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
     .subtitle { margin: 6px 0 0; color: #ececec; font-size: 13px; }
     .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 18px; }
     .f-input {
@@ -241,7 +322,30 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
     }
     .f-input:focus { border-color: rgba(255,106,0,.45); box-shadow: 0 0 0 3px rgba(255,106,0,.12); }
 
-    /* Cards */
+    /* View toggle */
+    .view-toggle {
+      display: flex;
+      background: rgba(0,0,0,.06);
+      border-radius: var(--radius-sm);
+      padding: 3px;
+      gap: 2px;
+    }
+    .view-btn {
+      display: flex; align-items: center; gap: 5px;
+      padding: 6px 10px; border-radius: calc(var(--radius-sm) - 2px);
+      border: none; background: transparent; cursor: pointer;
+      font-size: 11px; font-weight: 700; font-family: inherit;
+      color: #666; letter-spacing: 0.3px;
+      transition: background .15s, color .15s, box-shadow .15s;
+    }
+    .view-btn:hover { color: var(--text); background: rgba(0,0,0,.06); }
+    .view-btn.active {
+      background: #fff;
+      color: var(--accent);
+      box-shadow: 0 1px 4px rgba(0,0,0,.12);
+    }
+
+    /* Cards (grade) */
     .cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
@@ -262,6 +366,23 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
     .ag-card:hover {
       transform: translateY(-2px);
       box-shadow: 0 10px 24px rgba(0,0,0,.08);
+    }
+    .ag-card-image {
+      width: 100%;
+      height: 140px;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      margin-bottom: 2px;
+      position: relative;
+    }
+    .ag-vehicle-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .ag-card:hover .ag-vehicle-img {
+      transform: scale(1.05);
     }
     .ag-card-header {
       display: flex;
@@ -343,6 +464,87 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
       padding-top: 12px;
     }
 
+    /* List view */
+    .list-view {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border-radius: 16px;
+      overflow: hidden;
+      border: 1px solid rgba(0,0,0,.07);
+      box-shadow: var(--shadow-soft);
+    }
+    .list-header {
+      display: grid;
+      grid-template-columns: 140px 1fr 160px 140px 150px auto;
+      gap: 12px;
+      align-items: center;
+      padding: 10px 18px;
+      background: rgba(0,0,0,.06);
+      font-size: 9px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      color: #777;
+    }
+    .list-item {
+      display: grid;
+      grid-template-columns: 140px 1fr 160px 140px 150px auto;
+      gap: 12px;
+      align-items: center;
+      padding: 14px 18px;
+      background: linear-gradient(180deg, #ededed 0%, #e8e8e8 100%);
+      border-top: 1px solid rgba(0,0,0,.05);
+      transition: background .12s;
+    }
+    .list-item:first-of-type { border-top: none; }
+    .list-item:hover { background: #e2e2e2; }
+    .list-status { display: flex; align-items: center; }
+    .list-item-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+    .list-service {
+      font-weight: 800;
+      font-size: 13px;
+      color: var(--text);
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-vehicle {
+      font-size: 11px;
+      color: #666;
+      font-weight: 600;
+    }
+    .list-cell {
+      font-size: 12px;
+      color: var(--text);
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .list-cell-muted { color: #777; font-weight: 500; }
+    .list-cell-date { font-variant-numeric: tabular-nums; font-size: 11px; }
+    .list-actions {
+      display: flex;
+      gap: 6px;
+      justify-content: flex-end;
+      flex-shrink: 0;
+    }
+    .skeleton-list {
+      background: #f0f0f0;
+    }
+    .status-chip-sm {
+      font-size: 9px;
+      padding: 3px 8px;
+    }
+
     /* Form */
     .form-body { display: flex; flex-direction: column; }
     .form-section-label {
@@ -405,10 +607,25 @@ const TRASH_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" w
     .fg-hint { display: block; font-size: 11px; color: #888; margin-top: 4px; font-style: italic; }
     .fg-hint-warn { display: block; font-size: 11px; color: #b45309; margin-top: 5px; background: rgba(245,158,11,.08); border-radius: 4px; padding: 4px 8px; border-left: 3px solid #d97706; }
 
+    @media (max-width: 900px) {
+      .list-header { display: none; }
+      .list-item {
+        grid-template-columns: auto 1fr;
+        grid-template-rows: auto auto auto;
+        gap: 8px 12px;
+        padding: 14px 14px;
+      }
+      .list-status { grid-column: 1; grid-row: 1; }
+      .list-item-main { grid-column: 2; grid-row: 1; }
+      .list-cell, .list-cell-date { grid-column: 1 / -1; }
+      .list-actions { grid-column: 1 / -1; justify-content: flex-start; }
+    }
+
     @media (max-width: 768px) {
       .cards { grid-template-columns: 1fr; }
-      .head { flex-direction: column; }
-      .head .app-btn { width: 100%; }
+      .head { flex-direction: column; align-items: stretch; }
+      .head-actions { flex-wrap: wrap; }
+      .head-actions .app-btn { flex: 1; }
       .form-grid-2 { grid-template-columns: 1fr; }
       .filters { grid-template-columns: 1fr; }
     }
@@ -433,6 +650,8 @@ export class AgendamentosComponent implements OnInit {
   get isMecanico() {
     return this.role === 'MECANICO';
   }
+
+  viewMode: 'grid' | 'list' = 'grid';
 
   rows: Agendamento[] = [];
   search = '';
@@ -705,6 +924,33 @@ export class AgendamentosComponent implements OnInit {
         }
       });
     }
+  }
+
+  getCarImage(a: Agendamento): string {
+    const model = a.veiculoModelo?.toLowerCase() || '';
+    if (model.includes('seal') || model.includes('byd') || model.includes('dolphin')) {
+      return 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('pulse') || model.includes('compass') || model.includes('renegade') || model.includes('tracker') || model.includes('creta') || model.includes('t-cross') || model.includes('hr-v') || model.includes('suv')) {
+      return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('porsche') || model.includes('mustang') || model.includes('ferrari') || model.includes('camaro') || model.includes('bmw') || model.includes('audi') || model.includes('mercedes')) {
+      return 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('civic') || model.includes('corolla') || model.includes('sentra') || model.includes('cruze') || model.includes('sedan')) {
+      return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('gol') || model.includes('uno') || model.includes('palio') || model.includes('hb20') || model.includes('onix') || model.includes('argo') || model.includes('sandero')) {
+      return 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=600';
+    }
+    const id = a.id || 0;
+    const fallbacks = [
+      'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&q=80&w=600'
+    ];
+    return fallbacks[id % fallbacks.length];
   }
 
   formatStatus(status: string): string {
