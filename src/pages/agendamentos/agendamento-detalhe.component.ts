@@ -28,7 +28,7 @@ import { AuthService } from '../../services/auth.service';
         <div class="vehicle-side-panel">
           <span class="vehicle-id">ID: {{ ag.id || id }}</span>
           <img 
-            [src]="ag.veiculoModelo?.toLowerCase()?.includes('seal') ? 'https://images.images.com/byd-seal.png' : 'https://images.images.com/fiat-pulse.png'" 
+            [src]="getCarImage(ag)" 
             alt="Veículo" 
             class="vehicle-img"
           />
@@ -126,6 +126,11 @@ import { AuthService } from '../../services/auth.service';
         </div>
       </div>
       
+      <div class="save-error-banner" *ngIf="eventoSaveError">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        {{ eventoSaveError }}
+      </div>
+
       <div class="form-footer">
         <button class="app-btn app-btn-ghost" (click)="modal=false">Cancelar</button>
         <button class="app-btn" (click)="saveEvento()">Salvar</button>
@@ -295,6 +300,16 @@ import { AuthService } from '../../services/auth.service';
     .empty-state strong { display: block; margin-bottom: 5px; color: var(--text); }
     .empty-state p { margin: 0; color: #666; font-size: 13px; }
 
+    /* Save error banner */
+    .save-error-banner {
+      display: flex; align-items: flex-start; gap: 8px;
+      background: rgba(224,91,80,.08); border: 1.5px solid rgba(224,91,80,.3);
+      border-radius: var(--radius-sm); padding: 10px 14px;
+      color: #e05b50; font-size: 12px; font-weight: 600; line-height: 1.5;
+      margin-top: 16px;
+    }
+    .save-error-banner svg { flex-shrink: 0; margin-top: 1px; }
+
     /* Modal Form elements */
     .form-body { display: flex; flex-direction: column; }
     .fg-label {
@@ -401,16 +416,19 @@ export class AgendamentoDetalheComponent implements OnInit {
     const offset = now.getTimezoneOffset() * 60000;
     const localISOTime = (new Date(now.getTime() - offset)).toISOString().slice(0, 16);
 
+    this.eventoSaveError = '';
     this.evForm = { 
       agendamentoId: this.ag.id!, 
       titulo: '', 
       dataEvento: localISOTime, 
-      descricao: '' 
+      descricao: '',
+      status: this.ag.status || 'EM_ANDAMENTO'
     }; 
     this.modal = true; 
   }
 
   openEditEvento(e: EventoAgendamento) { 
+    this.eventoSaveError = '';
     this.evForm = { ...e }; 
     if (this.evForm.dataEvento) {
       try {
@@ -424,29 +442,44 @@ export class AgendamentoDetalheComponent implements OnInit {
     this.modal = true; 
   }
 
+  eventoSaveError = '';
+
   saveEvento() { 
-    if (!this.evForm.titulo) {
-      alert('O título do evento é obrigatório.');
+    this.eventoSaveError = '';
+    if (!this.evForm.titulo?.trim()) {
+      this.eventoSaveError = 'O título do evento é obrigatório.';
       return;
     }
 
-    const payload = {
-      ...this.evForm,
-      dataEvento: this.evForm.dataEvento ? new Date(this.evForm.dataEvento).toISOString() : undefined
+    // Send only the fields the backend expects in the body.
+    // agendamentoId is already in the URL path, so we omit it from the body
+    // to avoid a 400 "campos inválidos" rejection.
+    const payload: Record<string, unknown> = {
+      titulo: this.evForm.titulo.trim(),
+      descricao: this.evForm.descricao || null,
+      status: this.evForm.status || this.ag.status || 'EM_ANDAMENTO',
     };
 
+    if (this.evForm.dataEvento) {
+      payload['dataEvento'] = new Date(this.evForm.dataEvento).toISOString();
+    }
+
     const obs = this.evForm.id
-      ? this.agendamentoService.updateEvento(this.evForm.id, payload)
-      : this.agendamentoService.createEvento(this.ag.id!, payload);
+      ? this.agendamentoService.updateEvento(this.evForm.id, payload as any)
+      : this.agendamentoService.createEvento(this.ag.id!, payload as any);
 
     obs.subscribe({
       next: () => {
+        this.eventoSaveError = '';
         this.modal = false; 
         this.loadEventos();
       },
       error: (err) => {
         console.error('Erro ao salvar evento:', err);
-        alert(err.error?.message || 'Erro ao salvar evento.');
+        const details: string[] = err.error?.details || [];
+        this.eventoSaveError = details.length
+          ? details.join(' | ')
+          : (err.error?.message || 'Erro ao salvar evento. Verifique os dados e tente novamente.');
       }
     });
   }
@@ -461,6 +494,33 @@ export class AgendamentoDetalheComponent implements OnInit {
         }
       });
     }
+  }
+
+  getCarImage(a: Agendamento): string {
+    const model = a.veiculoModelo?.toLowerCase() || '';
+    if (model.includes('seal') || model.includes('byd') || model.includes('dolphin')) {
+      return 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('pulse') || model.includes('compass') || model.includes('renegade') || model.includes('tracker') || model.includes('creta') || model.includes('t-cross') || model.includes('hr-v') || model.includes('suv')) {
+      return 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('porsche') || model.includes('mustang') || model.includes('ferrari') || model.includes('camaro') || model.includes('bmw') || model.includes('audi') || model.includes('mercedes')) {
+      return 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('civic') || model.includes('corolla') || model.includes('sentra') || model.includes('cruze') || model.includes('sedan')) {
+      return 'https://images.unsplash.com/photo-1555215695-3004980ad54e?auto=format&fit=crop&q=80&w=600';
+    }
+    if (model.includes('gol') || model.includes('uno') || model.includes('palio') || model.includes('hb20') || model.includes('onix') || model.includes('argo') || model.includes('sandero')) {
+      return 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?auto=format&fit=crop&q=80&w=600';
+    }
+    const id = a.id || 0;
+    const fallbacks = [
+      'https://images.unsplash.com/photo-1542282088-fe8426682b8f?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&q=80&w=600',
+      'https://images.unsplash.com/photo-1486006920555-c77dce18193b?auto=format&fit=crop&q=80&w=600'
+    ];
+    return fallbacks[id % fallbacks.length];
   }
 
   formatDate(dateStr?: string): string {
